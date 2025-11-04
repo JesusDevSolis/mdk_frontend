@@ -1,0 +1,42 @@
+import React from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import LoadingSpinner from '../common/LoadingSpinner'
+
+const ProtectedRoute = ({ children, requiredRole = null }) => {
+  const { isAuthenticated, isLoading, hasRole } = useAuth()
+  const location = useLocation()
+
+  // Mostrar spinner mientras se verifica la autenticación
+  if (isLoading) {
+    return <LoadingSpinner />
+  }
+
+  // Si no está autenticado, redirigir al login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Si se requiere un rol específico y el usuario no lo tiene
+  if (requiredRole && !hasRole(requiredRole)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-red-600 mb-4">403</h1>
+          <p className="text-gray-600 mb-8">No tienes permisos para acceder a esta página</p>
+          <button 
+            onClick={() => window.history.back()}
+            className="btn-primary"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Si todo está bien, renderizar el componente hijo
+  return children
+}
+
+export default ProtectedRoute
