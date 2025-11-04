@@ -127,23 +127,26 @@ const SucursalesPage = () => {
     }, [showDropdown]);
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 relative">
-        {/* Header con logo */}
-        <div className="relative h-32 bg-gradient-primary rounded-t-lg overflow-hidden">
-          {sucursal.logoUrl ? (
-            <img 
-              src={sucursal.logoUrl} 
-              alt={`Logo ${sucursal.name}`}
-              className="absolute inset-0 w-full h-full object-contain p-4"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Building2 className="w-12 h-12 text-white/70" />
-            </div>
-          )}
+      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 relative overflow-visible">
+        {/* Header con logo - SIN overflow-hidden */}
+        <div className="relative h-32 bg-gradient-primary rounded-t-lg">
+          {/* Overlay para mantener bordes redondeados */}
+          <div className="absolute inset-0 rounded-t-lg overflow-hidden">
+            {sucursal.logoUrl ? (
+              <img 
+                src={sucursal.logoUrl} 
+                alt={`Logo ${sucursal.name}`}
+                className="absolute inset-0 w-full h-full object-contain p-4"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Building2 className="w-12 h-12 text-white/70" />
+              </div>
+            )}
+          </div>
           
           {/* Botón de opciones */}
-          <div className="absolute top-2 right-2 z-30">
+          <div className="absolute top-2 right-2 z-50">
             <div className="relative">
               <button 
                 onClick={(e) => {
@@ -155,11 +158,17 @@ const SucursalesPage = () => {
                 <MoreVertical className="w-4 h-4" />
               </button>
               
-              {/* Dropdown menu con z-index alto */}
+              {/* Dropdown menu con posición absoluta fuera del contenedor */}
               {showDropdown && (
                 <div 
-                  className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1"
-                  style={{ zIndex: 9999 }}
+                  className="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[12rem]"
+                  style={{ 
+                    zIndex: 10000,
+                    top: 'auto',
+                    right: 'auto',
+                    transform: 'translate(-100%, 0)',
+                    marginTop: '0.25rem'
+                  }}
                 >
                   <button 
                     onClick={(e) => {

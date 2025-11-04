@@ -513,7 +513,7 @@ const SucursalForm = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-end gap-3 p-2 border-t border-gray-200 bg-gray-50">
           <button
             type="button"
             onClick={onClose}
