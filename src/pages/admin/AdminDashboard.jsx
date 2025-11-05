@@ -125,11 +125,11 @@ const DashboardHome = () => (
   </div>
 )
 
-// Importar componente real de SucursalesPage
+// Importar componentes reales
 import SucursalesPage from './SucursalesPage'
+import AlumnosPage from './AlumnosPage'
 
 // Componentes placeholder para otras páginas
-const AlumnosPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Alumnos</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const HorariosPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Horarios</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const PagosPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Pagos</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const CalificacionesPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Calificaciones</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>

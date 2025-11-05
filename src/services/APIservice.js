@@ -155,11 +155,78 @@ export const sucursalesAPI = {
   }
 }
 
-// Servicios de alumnos
+// ===== SERVICIOS DE TUTORES =====
+export const tutoresAPI = {
+  // Obtener todos los tutores
+  getAll: async (params = {}) => {
+    const response = await api.get('/tutores', { params })
+    return response.data
+  },
+  
+  // Obtener tutor por ID
+  getById: async (id) => {
+    const response = await api.get(`/tutores/${id}`)
+    return response.data
+  },
+  
+  // Crear tutor
+  create: async (tutorData) => {
+    const response = await api.post('/tutores', tutorData)
+    return response.data
+  },
+  
+  // Actualizar tutor
+  update: async (id, tutorData) => {
+    const response = await api.put(`/tutores/${id}`, tutorData)
+    return response.data
+  },
+  
+  // Eliminar tutor
+  delete: async (id) => {
+    const response = await api.delete(`/tutores/${id}`)
+    return response.data
+  },
+  
+  // Subir foto de perfil
+  uploadPhoto: async (id, photoFile) => {
+    const formData = new FormData()
+    formData.append('photo', photoFile)
+    const response = await api.post(`/tutores/${id}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+  
+  // Obtener hijos de un tutor
+  getChildren: async (id) => {
+    const response = await api.get(`/tutores/${id}/children`)
+    return response.data
+  },
+  
+  // Buscar tutores
+  search: async (searchTerm, filters = {}) => {
+    const response = await api.get('/tutores', {
+      params: { search: searchTerm, ...filters }
+    })
+    return response.data
+  },
+  
+  // Obtener tutores disponibles (sin hijos)
+  getAvailable: async () => {
+    const response = await api.get('/tutores', {
+      params: { hasChildren: 'false' }
+    })
+    return response.data
+  }
+}
+
+// ===== SERVICIOS DE ALUMNOS =====
 export const alumnosAPI = {
   // Obtener todos los alumnos
-  getAll: async (filters = {}) => {
-    const response = await api.get('/alumnos', { params: filters })
+  getAll: async (params = {}) => {
+    const response = await api.get('/alumnos', { params })
     return response.data
   },
   
@@ -185,26 +252,77 @@ export const alumnosAPI = {
   delete: async (id) => {
     const response = await api.delete(`/alumnos/${id}`)
     return response.data
-  }
-}
-
-// Servicios de tutores
-export const tutoresAPI = {
-  // Obtener tutores de un alumno
-  getByAlumno: async (alumnoId) => {
-    const response = await api.get(`/alumnos/${alumnoId}/tutores`)
+  },
+  
+  // Subir foto de perfil
+  uploadPhoto: async (id, photoFile) => {
+    const formData = new FormData()
+    formData.append('photo', photoFile)
+    const response = await api.post(`/alumnos/${id}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     return response.data
   },
   
-  // Crear tutor
-  create: async (tutorData) => {
-    const response = await api.post('/tutores', tutorData)
+  // Actualizar cinturón
+  updateBelt: async (id, beltData) => {
+    const response = await api.put(`/alumnos/${id}/belt`, beltData)
     return response.data
   },
   
-  // Actualizar tutor
-  update: async (id, tutorData) => {
-    const response = await api.put(`/tutores/${id}`, tutorData)
+  // Obtener estadísticas generales
+  getStats: async (params = {}) => {
+    const response = await api.get('/alumnos/stats', { params })
+    return response.data
+  },
+  
+  // Buscar alumnos
+  search: async (searchTerm, filters = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { search: searchTerm, ...filters }
+    })
+    return response.data
+  },
+  
+  // Filtros por sucursal
+  getBySucursal: async (sucursalId, params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { sucursal: sucursalId, ...params }
+    })
+    return response.data
+  },
+  
+  // Filtros por tutor
+  getByTutor: async (tutorId, params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { tutor: tutorId, ...params }
+    })
+    return response.data
+  },
+  
+  // Filtros por cinturón
+  getByBelt: async (beltLevel, params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { belt: beltLevel, ...params }
+    })
+    return response.data
+  },
+  
+  // Filtros por edad
+  getByAge: async (ageRange, params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { age: ageRange, ...params }
+    })
+    return response.data
+  },
+  
+  // Obtener alumnos activos
+  getActive: async (params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { status: 'activo', ...params }
+    })
     return response.data
   }
 }
@@ -374,6 +492,143 @@ export const notificacionesAPI = {
       chatIds
     })
     return response.data
+  }
+}
+
+// ===== CONSTANTES ÚTILES =====
+export const BELT_LEVELS = [
+  'blanco', 'blanco-amarillo', 'amarillo', 'amarillo-naranja', 'naranja',
+  'naranja-verde', 'verde', 'verde-azul', 'azul', 'azul-marron', 'marron',
+  'marron-negro', 'negro-1', 'negro-2', 'negro-3', 'negro-4', 'negro-5',
+  'negro-6', 'negro-7', 'negro-8', 'negro-9'
+]
+
+export const BELT_LEVELS_DISPLAY = {
+  'blanco': 'Blanco',
+  'blanco-amarillo': 'Blanco-Amarillo',
+  'amarillo': 'Amarillo',
+  'amarillo-naranja': 'Amarillo-Naranja',
+  'naranja': 'Naranja',
+  'naranja-verde': 'Naranja-Verde',
+  'verde': 'Verde',
+  'verde-azul': 'Verde-Azul',
+  'azul': 'Azul',
+  'azul-marron': 'Azul-Marrón',
+  'marron': 'Marrón',
+  'marron-negro': 'Marrón-Negro',
+  'negro-1': 'Negro 1° Dan',
+  'negro-2': 'Negro 2° Dan',
+  'negro-3': 'Negro 3° Dan',
+  'negro-4': 'Negro 4° Dan',
+  'negro-5': 'Negro 5° Dan',
+  'negro-6': 'Negro 6° Dan',
+  'negro-7': 'Negro 7° Dan',
+  'negro-8': 'Negro 8° Dan',
+  'negro-9': 'Negro 9° Dan'
+}
+
+export const GENDER_OPTIONS = [
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'femenino', label: 'Femenino' },
+  { value: 'otro', label: 'Otro' }
+]
+
+export const STATUS_OPTIONS = [
+  { value: 'activo', label: 'Activo' },
+  { value: 'inactivo', label: 'Inactivo' },
+  { value: 'suspendido', label: 'Suspendido' },
+  { value: 'graduado', label: 'Graduado' }
+]
+
+export const ID_TYPES = [
+  { value: 'ine', label: 'INE' },
+  { value: 'pasaporte', label: 'Pasaporte' },
+  { value: 'licencia', label: 'Licencia de Conducir' },
+  { value: 'otro', label: 'Otro' }
+]
+
+// ===== FUNCIONES ÚTILES =====
+export const utils = {
+  // Formatear teléfono mexicano
+  formatPhoneMX: (phone) => {
+    const cleaned = phone.replace(/\D/g, '')
+    if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')
+    }
+    return phone
+  },
+  
+  // Calcular edad
+  calculateAge: (dateOfBirth) => {
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    return age
+  },
+  
+  // Obtener color del cinturón
+  getBeltColor: (level) => {
+    const colors = {
+      'blanco': '#FFFFFF',
+      'blanco-amarillo': '#FFFF99',
+      'amarillo': '#FFFF00',
+      'amarillo-naranja': '#FFB347',
+      'naranja': '#FFA500',
+      'naranja-verde': '#90EE90',
+      'verde': '#008000',
+      'verde-azul': '#20B2AA',
+      'azul': '#0000FF',
+      'azul-marron': '#8B4513',
+      'marron': '#A0522D',
+      'marron-negro': '#2F1B14',
+      'negro-1': '#000000',
+      'negro-2': '#000000',
+      'negro-3': '#000000',
+      'negro-4': '#000000',
+      'negro-5': '#000000',
+      'negro-6': '#000000',
+      'negro-7': '#000000',
+      'negro-8': '#000000',
+      'negro-9': '#000000'
+    }
+    return colors[level] || '#CCCCCC'
+  },
+  
+  // Formatear fecha
+  formatDate: (date, format = 'dd/mm/yyyy') => {
+    if (!date) return ''
+    const d = new Date(date)
+    const day = d.getDate().toString().padStart(2, '0')
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const year = d.getFullYear()
+    
+    switch (format) {
+      case 'dd/mm/yyyy':
+        return `${day}/${month}/${year}`
+      case 'yyyy-mm-dd':
+        return `${year}-${month}-${day}`
+      case 'long':
+        return d.toLocaleDateString('es-MX', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      default:
+        return `${day}/${month}/${year}`
+    }
+  },
+  
+  // Validar email
+  validateEmail: (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
   }
 }
 
