@@ -160,7 +160,7 @@ const LandingPage = () => {
               >
                 Comenzar Ahora
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
+              </Link> 
             </div>
           </div>
         </div>
