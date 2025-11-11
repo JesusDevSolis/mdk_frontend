@@ -16,7 +16,7 @@ const LandingPage = () => {
     },
     {
       icon: <BookOpen className="w-8 h-8" />,
-      title: "Seguimiento Académico ",
+      title: "Seguimiento Académico",
       description: "Calificaciones, evaluaciones y progreso de estudiantes"
     },
     {
