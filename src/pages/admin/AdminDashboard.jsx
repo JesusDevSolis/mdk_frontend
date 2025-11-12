@@ -128,10 +128,10 @@ const DashboardHome = () => (
 // Importar componentes reales
 import SucursalesPage from './SucursalesPage'
 import AlumnosPage from './AlumnosPage'
+import PagosPage from './PagosPage'
 
 // Componentes placeholder para otras páginas
 const HorariosPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Horarios</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
-const PagosPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Pagos</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const CalificacionesPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Calificaciones</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const AsistenciasPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Control de Asistencias</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const InstructoresPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Instructores</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
@@ -341,3 +341,5 @@ const AdminDashboard = () => {
 }
 
 export default AdminDashboard
+
+

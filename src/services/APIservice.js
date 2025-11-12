@@ -329,15 +329,45 @@ export const alumnosAPI = {
 
 // Servicios de pagos
 export const pagosAPI = {
-  // Obtener pagos
-  getAll: async (filters = {}) => {
-    const response = await api.get('/pagos', { params: filters })
+  // Obtener todos los pagos
+  getAll: async (params = {}) => {
+    const response = await api.get('/pagos', { params })
+    return response.data
+  },
+  
+  // Obtener pago por ID
+  getById: async (id) => {
+    const response = await api.get(`/pagos/${id}`)
     return response.data
   },
   
   // Crear pago
   create: async (pagoData) => {
     const response = await api.post('/pagos', pagoData)
+    return response.data
+  },
+  
+  // Actualizar pago
+  update: async (id, pagoData) => {
+    const response = await api.put(`/pagos/${id}`, pagoData)
+    return response.data
+  },
+  
+  // Eliminar pago
+  delete: async (id) => {
+    const response = await api.delete(`/pagos/${id}`)
+    return response.data
+  },
+  
+  // Marcar como pagado
+  markAsPaid: async (id, paymentData) => {
+    const response = await api.put(`/pagos/${id}/marcar-pagado`, paymentData)
+    return response.data
+  },
+  
+  // Cancelar pago
+  cancel: async (id, reason) => {
+    const response = await api.put(`/pagos/${id}/cancelar`, { reason })
     return response.data
   },
   
@@ -353,11 +383,35 @@ export const pagosAPI = {
     return response.data
   },
   
-  // Generar comprobante
+  // Generar comprobante PDF
   generateComprobante: async (pagoId) => {
     const response = await api.get(`/pagos/${pagoId}/generar-comprobante`, {
       responseType: 'blob'
     })
+    return response.data
+  },
+  
+  // 🆕 NUEVO: Obtener estadísticas
+  getStats: async (params = {}) => {
+    const response = await api.get('/pagos/stats', { params })
+    return response.data
+  },
+  
+  // Obtener pagos por alumno
+  getByAlumno: async (alumnoId, params = {}) => {
+    const response = await api.get(`/pagos/alumno/${alumnoId}`, { params })
+    return response.data
+  },
+  
+  // Obtener pagos por tutor
+  getByTutor: async (tutorId, params = {}) => {
+    const response = await api.get(`/pagos/tutor/${tutorId}`, { params })
+    return response.data
+  },
+  
+  // Obtener pagos pendientes
+  getPendientes: async (params = {}) => {
+    const response = await api.get('/pagos/pendientes', { params })
     return response.data
   }
 }

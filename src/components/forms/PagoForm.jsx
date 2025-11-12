@@ -30,6 +30,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
   const [sucursales, setSucursales] = useState([])
   const [selectedAlumno, setSelectedAlumno] = useState(null)
   const [dueDate, setDueDate] = useState(null)
+  const [dataLoaded, setDataLoaded] = useState(false)
 
   // React Hook Form
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm({
@@ -59,49 +60,171 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
 
   useEffect(() => {
     if (isOpen) {
-      loadAlumnos()
-      loadSucursales()
-      
-      if (mode === 'edit' && pago) {
-        populateForm()
-      } else {
-        resetForm()
-      }
+      loadData()
+    } else {
+      // Resetear cuando se cierra
+      setDataLoaded(false)
     }
-  }, [isOpen, mode, pago])
+  }, [isOpen])
+
+  // Efecto separado para cargar los datos del pago después de cargar alumnos y sucursales
+  useEffect(() => {
+    if (isOpen && dataLoaded && mode === 'edit' && pago) {
+      console.log('📝 Cargando datos del pago para editar:', pago)
+      populateForm()
+    }
+  }, [isOpen, dataLoaded, mode, pago])
 
   // ===== FUNCIONES DE CARGA =====
+
+  const loadData = async () => {
+    try {
+      // Cargar alumnos y sucursales en paralelo
+      await Promise.all([
+        loadAlumnos(),
+        loadSucursales()
+      ])
+      
+      // Marcar que los datos ya están cargados
+      setDataLoaded(true)
+      
+      // Si es modo crear, resetear el formulario
+      if (mode === 'create') {
+        resetForm()
+      }
+    } catch (error) {
+      console.error('Error al cargar datos:', error)
+      toast.error('Error al cargar los datos necesarios')
+    }
+  }
 
   const loadAlumnos = async () => {
     try {
       const response = await alumnosAPI.getAll({ limit: 1000 })
-      setAlumnos(response.data)
+      console.log('📥 Respuesta completa de alumnos:', response)
+      
+      // Manejar diferentes estructuras de respuesta del backend
+      let alumnosData = []
+      
+      if (Array.isArray(response)) {
+        alumnosData = response
+        console.log('✅ Caso 1: Array directo')
+      } else if (response.data) {
+        if (Array.isArray(response.data)) {
+          alumnosData = response.data
+          console.log('✅ Caso 2a: response.data es array')
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          alumnosData = response.data.data
+          console.log('✅ Caso 2b: response.data.data es array (paginación)')
+        } else if (response.data.alumnos && Array.isArray(response.data.alumnos)) {
+          alumnosData = response.data.alumnos
+          console.log('✅ Caso 2c: response.data.alumnos es array')
+        }
+      }
+      
+      console.log(`✅ Total de alumnos cargados: ${alumnosData.length}`)
+      setAlumnos(alumnosData)
+      
+      if (alumnosData.length === 0) {
+        toast.error('No se encontraron alumnos en el sistema')
+      }
     } catch (error) {
-      console.error('Error al cargar alumnos:', error)
+      console.error('❌ Error al cargar alumnos:', error)
       toast.error('Error al cargar la lista de alumnos')
+      setAlumnos([])
     }
   }
 
   const loadSucursales = async () => {
     try {
       const response = await sucursalesAPI.getAll()
-      setSucursales(response.data)
+      console.log('📥 Respuesta completa de sucursales:', response)
+      
+      // Manejar diferentes estructuras de respuesta del backend
+      let sucursalesData = []
+      
+      if (Array.isArray(response)) {
+        sucursalesData = response
+        console.log('✅ Caso 1: Array directo')
+      } else if (response.data) {
+        if (Array.isArray(response.data)) {
+          sucursalesData = response.data
+          console.log('✅ Caso 2a: response.data es array')
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          sucursalesData = response.data.data
+          console.log('✅ Caso 2b: response.data.data es array (paginación)')
+        } else if (response.data.sucursales && Array.isArray(response.data.sucursales)) {
+          sucursalesData = response.data.sucursales
+          console.log('✅ Caso 2c: response.data.sucursales es array')
+        }
+      }
+      
+      console.log(`✅ Total de sucursales cargadas: ${sucursalesData.length}`)
+      setSucursales(sucursalesData)
+      
+      if (sucursalesData.length === 0) {
+        toast.error('No se encontraron sucursales en el sistema')
+      }
     } catch (error) {
-      console.error('Error al cargar sucursales:', error)
+      console.error('❌ Error al cargar sucursales:', error)
       toast.error('Error al cargar la lista de sucursales')
+      setSucursales([])
     }
   }
 
   const populateForm = () => {
-    if (!pago) return
+    if (!pago) {
+      console.log('❌ No hay pago para cargar')
+      return
+    }
+
+    console.log('🔍 Pago recibido:', pago)
+    console.log('🔍 Alumno del pago:', pago.alumno)
+    console.log('🔍 Sucursal del pago:', pago.sucursal)
+    console.log('🔍 Tutor del pago:', pago.tutor)
+
+    // Extraer IDs de forma segura
+    const alumnoId = pago.alumno?._id || pago.alumno || ''
+    const sucursalId = pago.sucursal?._id || pago.sucursal || ''
+    const tutorId = pago.tutor?._id || pago.tutor || ''
+
+    console.log('📌 IDs extraídos:')
+    console.log('  - Alumno ID:', alumnoId)
+    console.log('  - Sucursal ID:', sucursalId)
+    console.log('  - Tutor ID:', tutorId)
+
+    // Verificar que existen en las listas cargadas
+    const alumnoExists = alumnos.find(a => a._id === alumnoId)
+    const sucursalExists = sucursales.find(s => s._id === sucursalId)
+
+    console.log('✅ Verificación:')
+    console.log('  - Alumno existe en lista:', !!alumnoExists)
+    console.log('  - Sucursal existe en lista:', !!sucursalExists)
 
     // Establecer valores del formulario
-    setValue('alumno', pago.alumno?._id || '')
-    setValue('tutor', pago.tutor?._id || '')
-    setValue('sucursal', pago.sucursal?._id || '')
-    setValue('type', pago.type)
+    if (alumnoId) {
+      setValue('alumno', alumnoId)
+      console.log('✅ Alumno establecido:', alumnoId)
+      
+      // Si el alumno existe en la lista, establecer selectedAlumno
+      if (alumnoExists) {
+        setSelectedAlumno(alumnoExists)
+      }
+    }
+
+    if (sucursalId) {
+      setValue('sucursal', sucursalId)
+      console.log('✅ Sucursal establecida:', sucursalId)
+    }
+
+    if (tutorId) {
+      setValue('tutor', tutorId)
+      console.log('✅ Tutor establecido:', tutorId)
+    }
+
+    setValue('type', pago.type || 'colegiatura')
     setValue('description', pago.description || '')
-    setValue('amount', pago.amount)
+    setValue('amount', pago.amount || '')
     setValue('discount', pago.discount || 0)
     setValue('notes', pago.notes || '')
 
@@ -114,10 +237,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
       setDueDate(new Date(pago.dueDate))
     }
 
-    // Cargar datos del alumno
-    if (pago.alumno) {
-      setSelectedAlumno(pago.alumno)
-    }
+    console.log('✅ Formulario poblado completamente')
   }
 
   const resetForm = () => {
@@ -130,6 +250,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
 
   const handleAlumnoChange = async (e) => {
     const alumnoId = e.target.value
+    console.log('👤 Alumno seleccionado:', alumnoId)
     setValue('alumno', alumnoId)
 
     if (!alumnoId) {
@@ -143,13 +264,18 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
     const alumno = alumnos.find(a => a._id === alumnoId)
     if (alumno) {
       setSelectedAlumno(alumno)
+      console.log('✅ Alumno encontrado:', alumno)
       
       // Auto-llenar tutor y sucursal
       if (alumno.tutor) {
-        setValue('tutor', alumno.tutor._id || alumno.tutor)
+        const tutorId = alumno.tutor._id || alumno.tutor
+        setValue('tutor', tutorId)
+        console.log('✅ Tutor auto-llenado:', tutorId)
       }
       if (alumno.enrollment?.sucursal) {
-        setValue('sucursal', alumno.enrollment.sucursal._id || alumno.enrollment.sucursal)
+        const sucursalId = alumno.enrollment.sucursal._id || alumno.enrollment.sucursal
+        setValue('sucursal', sucursalId)
+        console.log('✅ Sucursal auto-llenada:', sucursalId)
       }
     }
   }
@@ -211,6 +337,8 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
           year: parseInt(data.periodYear)
         }
       }
+
+      console.log('📤 Datos a enviar:', paymentData)
 
       // Crear o actualizar
       if (mode === 'create') {
@@ -280,17 +408,24 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                     errors.alumno ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  disabled={loading}
+                  disabled={loading || !dataLoaded}
                 >
                   <option value="">Seleccionar alumno...</option>
-                  {alumnos.map(alumno => (
-                    <option key={alumno._id} value={alumno._id}>
-                      {alumno.firstName} {alumno.lastName} - {alumno.enrollment?.studentId}
-                    </option>
-                  ))}
+                  {Array.isArray(alumnos) && alumnos.length > 0 ? (
+                    alumnos.map(alumno => (
+                      <option key={alumno._id} value={alumno._id}>
+                        {alumno.firstName} {alumno.lastName} - {alumno.enrollment?.studentId || 'Sin ID'}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No hay alumnos disponibles</option>
+                  )}
                 </select>
                 {errors.alumno && (
                   <p className="text-red-500 text-xs mt-1">{errors.alumno.message}</p>
+                )}
+                {!dataLoaded && (
+                  <p className="text-yellow-600 text-xs mt-1">⏳ Cargando alumnos...</p>
                 )}
               </div>
 
@@ -332,18 +467,25 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
                     className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                       errors.sucursal ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    disabled={loading}
+                    disabled={loading || !dataLoaded}
                   >
                     <option value="">Seleccionar sucursal...</option>
-                    {sucursales.map(sucursal => (
-                      <option key={sucursal._id} value={sucursal._id}>
-                        {sucursal.name}
-                      </option>
-                    ))}
+                    {Array.isArray(sucursales) && sucursales.length > 0 ? (
+                      sucursales.map(sucursal => (
+                        <option key={sucursal._id} value={sucursal._id}>
+                          {sucursal.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No hay sucursales disponibles</option>
+                    )}
                   </select>
                 </div>
                 {errors.sucursal && (
                   <p className="text-red-500 text-xs mt-1">{errors.sucursal.message}</p>
+                )}
+                {!dataLoaded && (
+                  <p className="text-yellow-600 text-xs mt-1">⏳ Cargando sucursales...</p>
                 )}
               </div>
 
@@ -352,14 +494,16 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Tutor (Opcional)
                 </label>
-                <input
-                  type="text"
-                  {...register('tutor')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                  disabled
-                  readOnly
-                  placeholder="Se asigna automáticamente"
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    {...register('tutor')}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    placeholder="Se asigna automáticamente"
+                    disabled
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -367,7 +511,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
           {/* Sección: Detalles del Pago */}
           <div className="border-t border-gray-200 pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-green-600" />
+              <DollarSign className="w-5 h-5 text-green-600" />
               Detalles del Pago
             </h3>
 
@@ -380,7 +524,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
                 <div className="relative">
                   <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <select
-                    {...register('type', { required: 'El tipo es requerido' })}
+                    {...register('type', { required: 'El tipo de pago es requerido' })}
                     onChange={handleTypeChange}
                     className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                       errors.type ? 'border-red-500' : 'border-gray-300'
@@ -580,7 +724,7 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
             <button
               type="submit"
               className="btn-primary flex items-center gap-2"
-              disabled={loading}
+              disabled={loading || !dataLoaded}
             >
               {loading ? (
                 <>
