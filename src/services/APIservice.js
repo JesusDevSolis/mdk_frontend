@@ -543,32 +543,58 @@ export const instructoresAPI = {
   }
 }
 
-// Servicios de dashboard y estadísticas
+
+// ===== SERVICIOS DE DASHBOARD =====
 export const dashboardAPI = {
-  // Obtener estadísticas generales
+  // ENDPOINT PRINCIPAL - Resumen rápido para tarjetas
+  getResumen: async () => {
+    const response = await api.get('/dashboard/resumen')
+    return response.data
+  },
+  
+  // Obtener estadísticas generales completas
   getStats: async () => {
     const response = await api.get('/dashboard/stats')
     return response.data
   },
   
-  // Obtener gráficos de ingresos
-  getIngresos: async (periodo = 'mes') => {
-    const response = await api.get(`/dashboard/ingresos`, { params: { periodo } })
+  // Obtener actividad reciente (últimos alumnos, pagos, próximos vencimientos)
+  getActividadReciente: async (limit = 10) => {
+    const response = await api.get('/dashboard/actividad-reciente', { 
+      params: { limit } 
+    })
     return response.data
   },
   
-  // Obtener alumnos recientes
-  getAlumnosRecientes: async () => {
-    const response = await api.get('/dashboard/alumnos-recientes')
+  // Obtener estadísticas por sucursal
+  getSucursalesStats: async () => {
+    const response = await api.get('/dashboard/sucursales-stats')
     return response.data
   },
   
-  // Obtener pagos pendientes
-  getPagosPendientes: async () => {
-    const response = await api.get('/dashboard/pagos-pendientes')
+  // Obtener comparativa de sucursales (para tabla comparativa)
+  getSucursalesComparativa: async () => {
+    const response = await api.get('/dashboard/sucursales-comparativa')
+    return response.data
+  },
+  
+  // Obtener estadísticas financieras detalladas (Solo Admin)
+  getFinanciero: async (year = null, month = null) => {
+    const params = {}
+    if (year) params.year = year
+    if (month) params.month = month
+    
+    const response = await api.get('/dashboard/financiero', { params })
+    return response.data
+  },
+  
+  // Obtener estadísticas de alumnos (distribución por género, edad, sucursal)
+  getAlumnosStats: async () => {
+    const response = await api.get('/dashboard/alumnos-stats')
     return response.data
   }
 }
+
 
 // Servicios de notificaciones
 export const notificacionesAPI = {
