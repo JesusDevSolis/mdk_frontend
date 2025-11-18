@@ -391,7 +391,7 @@ export const pagosAPI = {
     return response.data
   },
   
-  // 🆕 NUEVO: Obtener estadísticas
+  // Obtener estadísticas
   getStats: async (params = {}) => {
     const response = await api.get('/pagos/stats', { params })
     return response.data
@@ -481,9 +481,15 @@ export const calificacionesAPI = {
 
 // Servicios de instructores
 export const instructoresAPI = {
-  // Obtener instructores
-  getAll: async () => {
-    const response = await api.get('/instructores')
+  // Obtener todos los instructores con filtros opcionales
+  getAll: async (params = {}) => {
+    const response = await api.get('/instructores', { params })
+    return response.data
+  },
+  
+  // Obtener instructor por ID
+  getById: async (id) => {
+    const response = await api.get(`/instructores/${id}`)
     return response.data
   },
   
@@ -496,6 +502,43 @@ export const instructoresAPI = {
   // Actualizar instructor
   update: async (id, instructorData) => {
     const response = await api.put(`/instructores/${id}`, instructorData)
+    return response.data
+  },
+  
+  // Eliminar instructor (soft delete)
+  delete: async (id) => {
+    const response = await api.delete(`/instructores/${id}`)
+    return response.data
+  },
+  
+  // Obtener instructores por sucursal
+  getBySucursal: async (sucursalId) => {
+    const response = await api.get(`/instructores/sucursal/${sucursalId}`)
+    return response.data
+  },
+  
+  // Activar/Desactivar instructor
+  toggleStatus: async (id) => {
+    const response = await api.put(`/instructores/${id}/toggle-status`)
+    return response.data
+  },
+  
+  // Obtener estadísticas del instructor
+  getEstadisticas: async (id) => {
+    const response = await api.get(`/instructores/${id}/estadisticas`)
+    return response.data
+  },
+  
+  // Subir foto de perfil
+  uploadPhoto: async (id, photoFile) => {
+    const formData = new FormData()
+    formData.append('photo', photoFile)
+    
+    const response = await api.post(`/instructores/${id}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response.data
   }
 }
