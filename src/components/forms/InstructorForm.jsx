@@ -35,9 +35,10 @@ const InstructorForm = ({
     onClose, 
     onSuccess,
     mode = 'create' // 'create' or 'edit'
-}) => {
+    }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [sucursales, setSucursales] = useState([])
+    const [loadingSucursales, setLoadingSucursales] = useState(true)
     const [activeTab, setActiveTab] = useState('basic') // 'basic', 'instructor', 'availability'
     
     // Estados para fechas
@@ -88,20 +89,23 @@ const InstructorForm = ({
 
     const watchBelt = watch('instructorInfo.belt')
 
-    // Cargar datos iniciales
+    // Cargar datos iniciales (sucursales) cuando el modal se abre
     useEffect(() => {
+        if (isOpen) {
         loadInitialData()
-    }, [])
+        }
+    }, [isOpen])
 
-    // Cargar datos del instructor si estamos en modo edición
+    // Cargar datos del instructor después de que las sucursales estén cargadas
     useEffect(() => {
-        if (instructor && mode === 'edit') {
+        if (instructor && mode === 'edit' && sucursales.length > 0) {
         loadInstructorData()
         }
-    }, [instructor, mode])
+    }, [instructor, mode, sucursales])
 
     const loadInitialData = async () => {
         try {
+        setLoadingSucursales(true)
         const response = await sucursalesAPI.getAll()
         if (response.success) {
             setSucursales(response.data.sucursales || [])
@@ -109,6 +113,8 @@ const InstructorForm = ({
         } catch (error) {
         console.error('Error al cargar sucursales:', error)
         toast.error('Error al cargar sucursales')
+        } finally {
+        setLoadingSucursales(false)
         }
     }
 
@@ -459,9 +465,12 @@ const InstructorForm = ({
                         <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <select
                             {...register('sucursal')}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                            disabled={loadingSucursales}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none disabled:bg-gray-50 disabled:text-gray-500"
                         >
-                            <option value="">Sin asignar</option>
+                            <option value="">
+                            {loadingSucursales ? 'Cargando sucursales...' : 'Sin asignar'}
+                            </option>
                             {sucursales.map(sucursal => (
                             <option key={sucursal._id} value={sucursal._id}>
                                 {sucursal.name}
