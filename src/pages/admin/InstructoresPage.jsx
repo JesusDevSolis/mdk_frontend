@@ -113,9 +113,17 @@ const InstructoresPage = () => {
             
             // Filtrar por cinturón si está seleccionado
             if (filters.belt) {
-            instructoresData = instructoresData.filter(instructor => 
+            if (filters.belt === 'negro') {
+                // Filtrar todos los cinturones negros (negro, negro_1dan, negro_2dan, etc.)
+                instructoresData = instructoresData.filter(instructor => 
+                instructor.instructorInfo?.belt?.includes('negro')
+                )
+            } else {
+                // Filtrar por cinturón específico
+                instructoresData = instructoresData.filter(instructor => 
                 instructor.instructorInfo?.belt === filters.belt
-            )
+                )
+            }
             }
 
             setInstructores(instructoresData)
@@ -207,6 +215,46 @@ const InstructoresPage = () => {
         setSearchTerm('')
     }
 
+    // ✅ NUEVO: Manejadores para filtros desde tarjetas
+    const handleCardFilter = (filterType) => {
+        setSearchTerm('') // Limpiar búsqueda
+        setShowAdvancedFilters(false) // Cerrar filtros avanzados
+        
+        switch(filterType) {
+        case 'all':
+            // Limpiar todos los filtros
+            setFilters({
+            sucursal: '',
+            status: 'all',
+            belt: ''
+            })
+            break
+        case 'activos':
+            setFilters({
+            sucursal: '',
+            status: 'active',
+            belt: ''
+            })
+            break
+        case 'inactivos':
+            setFilters({
+            sucursal: '',
+            status: 'inactive',
+            belt: ''
+            })
+            break
+        case 'cinturonNegro':
+            setFilters({
+            sucursal: '',
+            status: 'all',
+            belt: 'negro'
+            })
+            break
+        default:
+            break
+        }
+    }
+
     const getBeltDisplay = (belt) => {
         if (!belt) return 'N/A'
         
@@ -275,7 +323,15 @@ const InstructoresPage = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Total Instructores */}
+            <div 
+            onClick={() => handleCardFilter('all')}
+            className={`bg-white rounded-xl shadow-sm p-6 border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+                filters.status === 'all' && !filters.belt && !filters.sucursal
+                ? 'border-blue-500 ring-2 ring-blue-200' 
+                : 'border-gray-100'
+            }`}
+            >
             <div className="flex items-center justify-between">
                 <div>
                 <p className="text-sm font-medium text-gray-600">Total Instructores</p>
@@ -285,9 +341,20 @@ const InstructoresPage = () => {
                 <Users className="w-6 h-6 text-blue-600" />
                 </div>
             </div>
+            {filters.status === 'all' && !filters.belt && !filters.sucursal && (
+                <p className="text-xs text-blue-600 mt-3 font-medium">✓ Todos los instructores</p>
+            )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Activos */}
+            <div 
+            onClick={() => handleCardFilter('activos')}
+            className={`bg-white rounded-xl shadow-sm p-6 border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+                filters.status === 'active' && !filters.belt
+                ? 'border-green-500 ring-2 ring-green-200' 
+                : 'border-gray-100'
+            }`}
+            >
             <div className="flex items-center justify-between">
                 <div>
                 <p className="text-sm font-medium text-gray-600">Activos</p>
@@ -297,9 +364,20 @@ const InstructoresPage = () => {
                 <UserCheck className="w-6 h-6 text-green-600" />
                 </div>
             </div>
+            {filters.status === 'active' && !filters.belt && (
+                <p className="text-xs text-green-600 mt-3 font-medium">✓ Filtro activo</p>
+            )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Inactivos */}
+            <div 
+            onClick={() => handleCardFilter('inactivos')}
+            className={`bg-white rounded-xl shadow-sm p-6 border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+                filters.status === 'inactive' && !filters.belt
+                ? 'border-red-500 ring-2 ring-red-200' 
+                : 'border-gray-100'
+            }`}
+            >
             <div className="flex items-center justify-between">
                 <div>
                 <p className="text-sm font-medium text-gray-600">Inactivos</p>
@@ -309,9 +387,20 @@ const InstructoresPage = () => {
                 <X className="w-6 h-6 text-red-600" />
                 </div>
             </div>
+            {filters.status === 'inactive' && !filters.belt && (
+                <p className="text-xs text-red-600 mt-3 font-medium">✓ Filtro activo</p>
+            )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Cinturón Negro */}
+            <div 
+            onClick={() => handleCardFilter('cinturonNegro')}
+            className={`bg-white rounded-xl shadow-sm p-6 border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+                filters.belt === 'negro' && filters.status === 'all'
+                ? 'border-gray-900 ring-2 ring-gray-300' 
+                : 'border-gray-100'
+            }`}
+            >
             <div className="flex items-center justify-between">
                 <div>
                 <p className="text-sm font-medium text-gray-600">Cinturón Negro</p>
@@ -321,6 +410,9 @@ const InstructoresPage = () => {
                 <Award className="w-6 h-6 text-white" />
                 </div>
             </div>
+            {filters.belt === 'negro' && filters.status === 'all' && (
+                <p className="text-xs text-gray-900 mt-3 font-medium">✓ Filtro activo</p>
+            )}
             </div>
         </div>
 

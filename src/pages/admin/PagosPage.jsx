@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { 
   CreditCard, 
   Search, 
@@ -25,6 +26,13 @@ import PagoDetailsModal from '../../components/modals/PagoDetailsModal'
 import ComprobanteUploadModal from '../../components/modals/ComprobanteUploadModal'
 
 const PagosPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Leer filtro de URL al inicializar
+  const initialFilter = searchParams.get('filter')
+  const validFilters = ['pendiente', 'vencido', 'pagado', 'cancelado']
+  const initialStatus = initialFilter && validFilters.includes(initialFilter) ? initialFilter : ''
+  
   // Estados principales
   const [pagos, setPagos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,7 +46,7 @@ const PagosPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
-    status: '',
+    status: initialStatus, // Usar el filtro inicial de la URL
     type: '',
     sucursal: ''
   })
@@ -332,7 +340,10 @@ const PagosPage = () => {
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Pagos */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div 
+          onClick={() => setFilters(prev => ({ ...prev, status: '' }))}
+          className={`bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 transform ${!filters.status ? 'ring-2 ring-blue-500' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-lg">
               <CreditCard className="w-6 h-6 text-blue-600" />
@@ -343,10 +354,16 @@ const PagosPage = () => {
               <p className="text-xs text-gray-500">{formatCurrency(stats.totalAmount)}</p>
             </div>
           </div>
+          {!filters.status && (
+            <p className="text-xs text-blue-600 mt-2 font-medium">✓ Todos los pagos</p>
+          )}
         </div>
 
         {/* Pagados */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div 
+          onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'pagado' ? '' : 'pagado' }))}
+          className={`bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 transform ${filters.status === 'pagado' ? 'ring-2 ring-green-500' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-3 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -357,10 +374,16 @@ const PagosPage = () => {
               <p className="text-xs text-gray-500">{formatCurrency(stats.pagadoAmount)}</p>
             </div>
           </div>
+          {filters.status === 'pagado' && (
+            <p className="text-xs text-green-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
 
         {/* Pendientes */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div 
+          onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'pendiente' ? '' : 'pendiente' }))}
+          className={`bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 transform ${filters.status === 'pendiente' ? 'ring-2 ring-yellow-500' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-3 bg-yellow-100 rounded-lg">
               <Clock className="w-6 h-6 text-yellow-600" />
@@ -371,10 +394,16 @@ const PagosPage = () => {
               <p className="text-xs text-gray-500">{formatCurrency(stats.pendienteAmount)}</p>
             </div>
           </div>
+          {filters.status === 'pendiente' && (
+            <p className="text-xs text-yellow-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
 
         {/* Vencidos */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div 
+          onClick={() => setFilters(prev => ({ ...prev, status: prev.status === 'vencido' ? '' : 'vencido' }))}
+          className={`bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 transform ${filters.status === 'vencido' ? 'ring-2 ring-red-500' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-3 bg-red-100 rounded-lg">
               <AlertCircle className="w-6 h-6 text-red-600" />
@@ -385,6 +414,9 @@ const PagosPage = () => {
               <p className="text-xs text-gray-500">{formatCurrency(stats.vencidoAmount)}</p>
             </div>
           </div>
+          {filters.status === 'vencido' && (
+            <p className="text-xs text-red-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
       </div>
 

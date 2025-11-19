@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate, createSearchParams } from 'react-router-dom'
 import { 
     Users, 
     Building2, 
@@ -16,8 +17,11 @@ import toast from 'react-hot-toast'
 import BackendStatus from '../../components/common/BackendStatus'
 import BeltDistributionChart from '../../components/dashboard/BeltDistributionChart'
 import SucursalesComparisonTable from '../../components/dashboard/SucursalesComparisonTable'
+import AlumnosDemographics from '../../components/dashboard/AlumnosDemographics'
+import FinancialStatsModal from '../../components/modals/FinancialStatsModal'
 
 const DashboardHome = () => {
+    const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
     const [resumen, setResumen] = useState(null)
     const [actividadReciente, setActividadReciente] = useState(null)
@@ -26,6 +30,7 @@ const DashboardHome = () => {
     const [statsLoading, setStatsLoading] = useState(true)
     const [sucursales, setSucursales] = useState([])
     const [sucursalesLoading, setSucursalesLoading] = useState(true)
+    const [showFinancialModal, setShowFinancialModal] = useState(false)
 
     // Cargar datos del resumen
     useEffect(() => {
@@ -145,14 +150,17 @@ const DashboardHome = () => {
             {/* Tarjetas de Estadísticas Principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Tarjeta: Total Alumnos */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => navigate('/admin/alumnos')}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 cursor-pointer hover:scale-105 transform"
+                >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">Total Alumnos</p>
                     <p className="text-3xl font-bold text-gray-900">
                         {resumen?.alumnosActivos || 0}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Activos en el sistema</p>
+                    <p className="text-xs text-gray-500 mt-1">Activos • Clic para ver más</p>
                     </div>
                     <div className="p-3 bg-blue-100 rounded-lg">
                     <Users className="w-8 h-8 text-blue-600" />
@@ -161,14 +169,17 @@ const DashboardHome = () => {
                 </div>
                 
                 {/* Tarjeta: Total Instructores */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => navigate('/admin/instructores')}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 cursor-pointer hover:scale-105 transform"
+                >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">Instructores</p>
                     <p className="text-3xl font-bold text-gray-900">
                         {resumen?.instructoresActivos || 0}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Personal activo</p>
+                    <p className="text-xs text-gray-500 mt-1">Personal activo • Clic para ver más</p>
                     </div>
                     <div className="p-3 bg-purple-100 rounded-lg">
                     <UserCheck className="w-8 h-8 text-purple-600" />
@@ -177,14 +188,17 @@ const DashboardHome = () => {
                 </div>
                 
                 {/* Tarjeta: Sucursales */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => navigate('/admin/sucursales')}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 cursor-pointer hover:scale-105 transform"
+                >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">Sucursales</p>
                     <p className="text-3xl font-bold text-gray-900">
                         {resumen?.sucursalesActivas || 0}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">En operación</p>
+                    <p className="text-xs text-gray-500 mt-1">En operación • Clic para ver más</p>
                     </div>
                     <div className="p-3 bg-yellow-100 rounded-lg">
                     <Building2 className="w-8 h-8 text-yellow-600" />
@@ -193,14 +207,17 @@ const DashboardHome = () => {
                 </div>
                 
                 {/* Tarjeta: Ingresos del Mes */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => setShowFinancialModal(true)}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6 cursor-pointer hover:scale-105 transform transition-transform"
+                >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">Ingresos del Mes</p>
                     <p className="text-3xl font-bold text-green-600">
                         {formatCurrency(resumen?.ingresosMes)}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Pagos recibidos</p>
+                    <p className="text-xs text-gray-500 mt-1">Pagos recibidos • Clic para detalles</p>
                     </div>
                     <div className="p-3 bg-green-100 rounded-lg">
                     <CreditCard className="w-8 h-8 text-green-600" />
@@ -209,14 +226,20 @@ const DashboardHome = () => {
                 </div>
                 
                 {/* Tarjeta: Pagos Pendientes */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => navigate({
+                        pathname: '/admin/pagos',
+                        search: createSearchParams({ filter: 'pendiente' }).toString()
+                    })}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 cursor-pointer hover:scale-105 transform"
+                >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">Pagos Pendientes</p>
                     <p className="text-3xl font-bold text-orange-600">
                         {resumen?.pagosPendientes || 0}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Por cobrar</p>
+                    <p className="text-xs text-gray-500 mt-1">Por cobrar • Clic para ver más</p>
                     </div>
                     <div className="p-3 bg-orange-100 rounded-lg">
                     <Clock className="w-8 h-8 text-orange-600" />
@@ -225,14 +248,20 @@ const DashboardHome = () => {
                 </div>
                 
                 {/* Tarjeta: Pagos Vencidos */}
-                <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-6">
+                <div 
+                    onClick={() => navigate({
+                        pathname: '/admin/pagos',
+                        search: createSearchParams({ filter: 'vencido' }).toString()
+                    })}
+                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-6 cursor-pointer hover:scale-105 transform"
+                >
                     <div className="flex items-center justify-between">
                         <div className="flex-1">
                             <p className="text-sm font-medium text-gray-600 mb-1">Pagos Vencidos</p>
                             <p className="text-3xl font-bold text-red-600">
                                 {resumen?.pagosVencidos || 0}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">Requieren atención</p>
+                            <p className="text-xs text-gray-500 mt-1">Requieren atención • Clic para ver más</p>
                         </div>
                         <div className="p-3 bg-red-100 rounded-lg">
                             <AlertCircle className="w-8 h-8 text-red-600" />
@@ -390,6 +419,17 @@ const DashboardHome = () => {
             <SucursalesComparisonTable 
                 sucursales={sucursales}
                 loading={sucursalesLoading}
+            />
+
+            {/* Sección: Demografía de Alumnos */}
+            <AlumnosDemographics 
+                loading={statsLoading}
+            />
+
+            {/* Modal de Estadísticas Financieras */}
+            <FinancialStatsModal 
+                isOpen={showFinancialModal}
+                onClose={() => setShowFinancialModal(false)}
             />
         </div>
     )

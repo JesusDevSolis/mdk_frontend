@@ -203,6 +203,58 @@ const AlumnosPage = () => {
     setShowAdvancedFilters(false)
   }
 
+  // ✅ NUEVO: Manejadores para filtros desde tarjetas
+  const handleCardFilter = (filterType) => {
+    setSearchTerm('') // Limpiar búsqueda
+    setShowAdvancedFilters(false) // Cerrar filtros avanzados
+    
+    switch(filterType) {
+      case 'all':
+        // Limpiar todos los filtros
+        setFilters({
+          sucursal: '',
+          status: 'all',
+          belt: '',
+          age: '',
+          tutor: '',
+          gender: ''
+        })
+        break
+      case 'activos':
+        setFilters({
+          sucursal: '',
+          status: 'activo',
+          belt: '',
+          age: '',
+          tutor: '',
+          gender: ''
+        })
+        break
+      case 'menores':
+        setFilters({
+          sucursal: '',
+          status: 'all',
+          belt: '',
+          age: '0-17',
+          tutor: '',
+          gender: ''
+        })
+        break
+      case 'adultos':
+        setFilters({
+          sucursal: '',
+          status: 'all',
+          belt: '',
+          age: '18-100',
+          tutor: '',
+          gender: ''
+        })
+        break
+      default:
+        break
+    }
+  }
+
   // ✅ NUEVO: Función para contar filtros activos
   const getActiveFiltersCount = () => {
     return Object.values(filters).filter(value => value && value !== 'all').length
@@ -372,7 +424,15 @@ const AlumnosPage = () => {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        {/* Total Alumnos */}
+        <div 
+          onClick={() => handleCardFilter('all')}
+          className={`bg-white p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+            filters.status === 'all' && !filters.age && !filters.sucursal && !filters.belt
+              ? 'border-blue-500 ring-2 ring-blue-200' 
+              : 'border-gray-200'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -382,9 +442,20 @@ const AlumnosPage = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
+          {filters.status === 'all' && !filters.age && !filters.sucursal && !filters.belt && (
+            <p className="text-xs text-blue-600 mt-2 font-medium">✓ Todos los alumnos</p>
+          )}
         </div>
 
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        {/* Activos */}
+        <div 
+          onClick={() => handleCardFilter('activos')}
+          className={`bg-white p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+            filters.status === 'activo' && !filters.age
+              ? 'border-green-500 ring-2 ring-green-200' 
+              : 'border-gray-200'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <UserCheck className="w-6 h-6 text-green-600" />
@@ -394,9 +465,20 @@ const AlumnosPage = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.activos}</p>
             </div>
           </div>
+          {filters.status === 'activo' && !filters.age && (
+            <p className="text-xs text-green-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
 
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        {/* Menores */}
+        <div 
+          onClick={() => handleCardFilter('menores')}
+          className={`bg-white p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+            filters.age === '0-17' && filters.status === 'all'
+              ? 'border-yellow-500 ring-2 ring-yellow-200' 
+              : 'border-gray-200'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Award className="w-6 h-6 text-yellow-600" />
@@ -406,9 +488,20 @@ const AlumnosPage = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.menores}</p>
             </div>
           </div>
+          {filters.age === '0-17' && filters.status === 'all' && (
+            <p className="text-xs text-yellow-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
 
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        {/* Adultos */}
+        <div 
+          onClick={() => handleCardFilter('adultos')}
+          className={`bg-white p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-105 transform ${
+            filters.age === '18-100' && filters.status === 'all'
+              ? 'border-purple-500 ring-2 ring-purple-200' 
+              : 'border-gray-200'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <Calendar className="w-6 h-6 text-purple-600" />
@@ -418,6 +511,9 @@ const AlumnosPage = () => {
               <p className="text-2xl font-bold text-gray-900">{stats.adultos}</p>
             </div>
           </div>
+          {filters.age === '18-100' && filters.status === 'all' && (
+            <p className="text-xs text-purple-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
         </div>
       </div>
 
