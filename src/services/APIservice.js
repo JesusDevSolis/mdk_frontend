@@ -302,32 +302,32 @@ export const alumnosAPI = {
     return response.data
   },
   
+  // Filtros por género
+  getByGender: async (gender, params = {}) => {
+    const response = await api.get('/alumnos', {
+      params: { gender, ...params }
+    })
+    return response.data
+  },
+  
   // Filtros por cinturón
   getByBelt: async (beltLevel, params = {}) => {
     const response = await api.get('/alumnos', {
-      params: { belt: beltLevel, ...params }
+      params: { beltLevel, ...params }
     })
     return response.data
   },
   
-  // Filtros por edad
-  getByAge: async (ageRange, params = {}) => {
+  // Filtros por estado
+  getByStatus: async (status, params = {}) => {
     const response = await api.get('/alumnos', {
-      params: { age: ageRange, ...params }
-    })
-    return response.data
-  },
-  
-  // Obtener alumnos activos
-  getActive: async (params = {}) => {
-    const response = await api.get('/alumnos', {
-      params: { status: 'activo', ...params }
+      params: { status, ...params }
     })
     return response.data
   }
 }
 
-// Servicios de pagos
+// ===== SERVICIOS DE PAGOS =====
 export const pagosAPI = {
   // Obtener todos los pagos
   getAll: async (params = {}) => {
@@ -359,89 +359,75 @@ export const pagosAPI = {
     return response.data
   },
   
-  // Marcar como pagado
-  markAsPaid: async (id, paymentData) => {
-    const response = await api.put(`/pagos/${id}/marcar-pagado`, paymentData)
-    return response.data
-  },
-  
-  // Cancelar pago
-  cancel: async (id, reason) => {
-    const response = await api.put(`/pagos/${id}/cancelar`, { reason })
-    return response.data
-  },
-  
-  // Subir comprobante
-  uploadComprobante: async (pagoId, comprobanteFile) => {
+  // Subir comprobante de pago
+  uploadComprobante: async (id, comprobanteFile) => {
     const formData = new FormData()
     formData.append('comprobante', comprobanteFile)
-    const response = await api.post(`/pagos/${pagoId}/comprobante`, formData, {
+    
+    const response = await api.post(`/pagos/${id}/comprobante`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     })
-    return response.data
-  },
-  
-  // Generar comprobante PDF
-  generateComprobante: async (pagoId) => {
-    const response = await api.get(`/pagos/${pagoId}/generar-comprobante`, {
-      responseType: 'blob'
-    })
-    return response.data
-  },
-  
-  // Obtener estadísticas
-  getStats: async (params = {}) => {
-    const response = await api.get('/pagos/stats', { params })
     return response.data
   },
   
   // Obtener pagos por alumno
   getByAlumno: async (alumnoId, params = {}) => {
-    const response = await api.get(`/pagos/alumno/${alumnoId}`, { params })
+    const response = await api.get('/pagos', {
+      params: { alumno: alumnoId, ...params }
+    })
     return response.data
   },
   
-  // Obtener pagos por tutor
-  getByTutor: async (tutorId, params = {}) => {
-    const response = await api.get(`/pagos/tutor/${tutorId}`, { params })
+  // Obtener pagos por sucursal
+  getBySucursal: async (sucursalId, params = {}) => {
+    const response = await api.get('/pagos', {
+      params: { sucursal: sucursalId, ...params }
+    })
     return response.data
   },
   
   // Obtener pagos pendientes
   getPendientes: async (params = {}) => {
-    const response = await api.get('/pagos/pendientes', { params })
-    return response.data
-  }
-}
-
-// Servicios de horarios
-export const horariosAPI = {
-  // Obtener horarios
-  getAll: async (filters = {}) => {
-    const response = await api.get('/horarios', { params: filters })
+    const response = await api.get('/pagos', {
+      params: { status: 'pendiente', ...params }
+    })
     return response.data
   },
   
-  // Crear horario
-  create: async (horarioData) => {
-    const response = await api.post('/horarios', horarioData)
+  // Obtener pagos completados
+  getCompletados: async (params = {}) => {
+    const response = await api.get('/pagos', {
+      params: { status: 'completado', ...params }
+    })
     return response.data
   },
   
-  // Actualizar horario
-  update: async (id, horarioData) => {
-    const response = await api.put(`/horarios/${id}`, horarioData)
+  // Obtener estadísticas de pagos
+  getStats: async (params = {}) => {
+    const response = await api.get('/pagos/stats', { params })
+    return response.data
+  },
+  
+  // Cambiar estado de pago
+  cambiarEstado: async (id, estado) => {
+    const response = await api.put(`/pagos/${id}/estado`, { estado })
+    return response.data
+  },
+  
+  // Obtener historial financiero de un alumno
+  getHistorialFinanciero: async (alumnoId) => {
+    const response = await api.get(`/pagos/alumno/${alumnoId}/historial`)
     return response.data
   }
 }
 
 // Servicios de asistencias
 export const asistenciasAPI = {
-  // Obtener asistencias
-  getAll: async (filters = {}) => {
-    const response = await api.get('/asistencias', { params: filters })
+  // Obtener todas las asistencias
+  getAll: async (params = {}) => {
+    const response = await api.get('/asistencias', { params })
     return response.data
   },
   
@@ -451,9 +437,15 @@ export const asistenciasAPI = {
     return response.data
   },
   
-  // Obtener reporte de asistencias
-  getReporte: async (filters = {}) => {
-    const response = await api.get('/asistencias/reporte', { params: filters })
+  // Obtener asistencias por alumno
+  getByAlumno: async (alumnoId, params = {}) => {
+    const response = await api.get(`/asistencias/alumno/${alumnoId}`, { params })
+    return response.data
+  },
+  
+  // Obtener estadísticas de asistencias
+  getStats: async (params = {}) => {
+    const response = await api.get('/asistencias/stats', { params })
     return response.data
   }
 }
@@ -461,8 +453,14 @@ export const asistenciasAPI = {
 // Servicios de calificaciones
 export const calificacionesAPI = {
   // Obtener calificaciones
-  getAll: async (filters = {}) => {
-    const response = await api.get('/calificaciones', { params: filters })
+  getAll: async (params = {}) => {
+    const response = await api.get('/calificaciones', { params })
+    return response.data
+  },
+  
+  // Obtener calificaciones por alumno
+  getByAlumno: async (alumnoId) => {
+    const response = await api.get(`/calificaciones/alumno/${alumnoId}`)
     return response.data
   },
   
@@ -543,6 +541,86 @@ export const instructoresAPI = {
   }
 }
 
+// ===== SERVICIOS DE HORARIOS =====
+export const horariosAPI = {
+  // Obtener todos los horarios con filtros opcionales
+  getAll: async (params = {}) => {
+    const response = await api.get('/horarios', { params })
+    return response.data
+  },
+  
+  // Obtener horario por ID
+  getById: async (id) => {
+    const response = await api.get(`/horarios/${id}`)
+    return response.data
+  },
+  
+  // Crear horario
+  create: async (horarioData) => {
+    const response = await api.post('/horarios', horarioData)
+    return response.data
+  },
+  
+  // Actualizar horario
+  update: async (id, horarioData) => {
+    const response = await api.put(`/horarios/${id}`, horarioData)
+    return response.data
+  },
+  
+  // Eliminar horario
+  delete: async (id) => {
+    const response = await api.delete(`/horarios/${id}`)
+    return response.data
+  },
+  
+  // Obtener horarios por sucursal
+  getBySucursal: async (sucursalId) => {
+    const response = await api.get(`/horarios/sucursal/${sucursalId}`)
+    return response.data
+  },
+  
+  // Obtener horarios por instructor
+  getByInstructor: async (instructorId) => {
+    const response = await api.get(`/horarios/instructor/${instructorId}`)
+    return response.data
+  },
+  
+  // Obtener horarios por día
+  getByDia: async (dia) => {
+    const response = await api.get(`/horarios/dia/${dia}`)
+    return response.data
+  },
+  
+  // Obtener horarios disponibles (con lugares disponibles)
+  getDisponibles: async () => {
+    const response = await api.get('/horarios/disponibles')
+    return response.data
+  },
+  
+  // Obtener estadísticas de horarios
+  getStats: async () => {
+    const response = await api.get('/horarios/stats')
+    return response.data
+  },
+  
+  // Cambiar estado del horario
+  cambiarEstado: async (id, estado) => {
+    const response = await api.put(`/horarios/${id}/estado`, { estado })
+    return response.data
+  },
+  
+  // Inscribir alumno en horario
+  inscribirAlumno: async (id, alumnoId) => {
+    const response = await api.post(`/horarios/${id}/inscribir`, { alumnoId })
+    return response.data
+  },
+  
+  // Desinscribir alumno de horario
+  desinscribirAlumno: async (id, alumnoId) => {
+    const response = await api.delete(`/horarios/${id}/desinscribir/${alumnoId}`)
+    return response.data
+  }
+}
 
 // ===== SERVICIOS DE DASHBOARD =====
 export const dashboardAPI = {
