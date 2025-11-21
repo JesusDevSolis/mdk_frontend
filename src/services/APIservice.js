@@ -423,17 +423,41 @@ export const pagosAPI = {
   }
 }
 
-// Servicios de asistencias
+// ===== SERVICIOS DE ASISTENCIAS =====
 export const asistenciasAPI = {
-  // Obtener todas las asistencias
+  // Obtener todas las asistencias con filtros opcionales
   getAll: async (params = {}) => {
     const response = await api.get('/asistencias', { params })
     return response.data
   },
   
-  // Registrar asistencia
+  // Obtener asistencia por ID
+  getById: async (id) => {
+    const response = await api.get(`/asistencias/${id}`)
+    return response.data
+  },
+  
+  // Marcar asistencia individual
   create: async (asistenciaData) => {
     const response = await api.post('/asistencias', asistenciaData)
+    return response.data
+  },
+  
+  // Marcar asistencia grupal (PRINCIPAL - para marcar varios alumnos a la vez)
+  marcarGrupo: async (grupoData) => {
+    const response = await api.post('/asistencias/marcar-grupo', grupoData)
+    return response.data
+  },
+  
+  // Actualizar asistencia
+  update: async (id, asistenciaData) => {
+    const response = await api.put(`/asistencias/${id}`, asistenciaData)
+    return response.data
+  },
+  
+  // Eliminar asistencia (solo admin)
+  delete: async (id) => {
+    const response = await api.delete(`/asistencias/${id}`)
     return response.data
   },
   
@@ -443,9 +467,21 @@ export const asistenciasAPI = {
     return response.data
   },
   
-  // Obtener estadísticas de asistencias
-  getStats: async (params = {}) => {
-    const response = await api.get('/asistencias/stats', { params })
+  // Obtener asistencias por horario (PRINCIPAL para marcar asistencias)
+  getByHorario: async (horarioId, params = {}) => {
+    const response = await api.get(`/asistencias/horario/${horarioId}`, { params })
+    return response.data
+  },
+  
+  // Obtener asistencias por fecha
+  getByFecha: async (fecha) => {
+    const response = await api.get(`/asistencias/fecha/${fecha}`)
+    return response.data
+  },
+  
+  // Obtener estadísticas generales de asistencias
+  getEstadisticas: async (params = {}) => {
+    const response = await api.get('/asistencias/estadisticas', { params })
     return response.data
   }
 }
@@ -747,6 +783,48 @@ export const ID_TYPES = [
   { value: 'licencia', label: 'Licencia de Conducir' },
   { value: 'otro', label: 'Otro' }
 ]
+
+// ===== CONSTANTES DE ASISTENCIAS =====
+export const ASISTENCIA_ESTADOS = [
+  { value: 'presente', label: 'Presente', color: 'green' },
+  { value: 'ausente', label: 'Ausente', color: 'red' },
+  { value: 'retardo', label: 'Retardo', color: 'yellow' },
+  { value: 'justificado', label: 'Justificado', color: 'blue' }
+]
+
+export const ASISTENCIA_ESTADOS_DISPLAY = {
+  'presente': 'Presente',
+  'ausente': 'Ausente',
+  'retardo': 'Retardo',
+  'justificado': 'Justificado'
+}
+
+export const ASISTENCIA_ESTADOS_COLORS = {
+  'presente': {
+    bg: 'bg-green-100',
+    border: 'border-green-500',
+    text: 'text-green-800',
+    badge: 'bg-green-500'
+  },
+  'ausente': {
+    bg: 'bg-red-100',
+    border: 'border-red-500',
+    text: 'text-red-800',
+    badge: 'bg-red-500'
+  },
+  'retardo': {
+    bg: 'bg-yellow-100',
+    border: 'border-yellow-500',
+    text: 'text-yellow-800',
+    badge: 'bg-yellow-500'
+  },
+  'justificado': {
+    bg: 'bg-blue-100',
+    border: 'border-blue-500',
+    text: 'text-blue-800',
+    badge: 'bg-blue-500'
+  }
+}
 
 // ===== FUNCIONES ÚTILES =====
 export const utils = {
