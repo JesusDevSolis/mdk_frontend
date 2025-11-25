@@ -25,12 +25,20 @@ import {
 import { horariosAPI, sucursalesAPI, instructoresAPI } from '../../services/APIservice'
 import { useAuth } from '../../context/AuthContext'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import { CreateButton } from '../../components/dashboard/PermissionButton'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 import HorarioForm from '../../components/forms/HorarioForm'
 import HorarioDetailsModal from '../../components/modals/HorarioDetailsModal'
 
 import toast from 'react-hot-toast'
 
 const HorariosPage = () => {
+    // ✅ NUEVO: Hook de permisos
+    const { canCreate, canUpdate, canDelete, can } = usePermissions('horarios')
+    
     const { user } = useAuth()
     const [horarios, setHorarios] = useState([])
     const [sucursales, setSucursales] = useState([])
@@ -359,6 +367,7 @@ const HorariosPage = () => {
                 
                 {showActions === horario._id && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    {/* Ver detalles - Siempre visible */}
                     <button
                         onClick={() => handleViewDetails(horario)}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -366,8 +375,9 @@ const HorariosPage = () => {
                         <Eye className="w-4 h-4" />
                         Ver detalles
                     </button>
-                    {(user?.role === 'admin' || user?.role === 'instructor') && (
-                        <>
+                    
+                    {/* ✅ CORREGIDO: Botones con permisos */}
+                    <PermissionGuard module="horarios" action="update">
                         <button
                             onClick={() => handleEdit(horario)}
                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -375,6 +385,9 @@ const HorariosPage = () => {
                             <Edit3 className="w-4 h-4" />
                             Editar
                         </button>
+                    </PermissionGuard>
+                    
+                    <PermissionGuard module="horarios" action="changeStatus">
                         <button
                             onClick={() => handleCambiarEstado(
                             horario, 
@@ -394,17 +407,17 @@ const HorariosPage = () => {
                             </>
                             )}
                         </button>
-                        {user?.role === 'admin' && (
-                            <button
-                            onClick={() => handleDelete(horario)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                            <Trash2 className="w-4 h-4" />
-                            Eliminar
-                            </button>
-                        )}
-                        </>
-                    )}
+                    </PermissionGuard>
+                    
+                    <PermissionGuard module="horarios" action="delete">
+                        <button
+                        onClick={() => handleDelete(horario)}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                        </button>
+                    </PermissionGuard>
                     </div>
                 )}
                 </div>
@@ -498,7 +511,8 @@ const HorariosPage = () => {
                 className="w-full btn-primary text-sm py-2"
                 >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Gestionar Alumnos
+                {/* ✅ CORREGIDO: Texto según rol */}
+                {can('enrollStudents') ? 'Gestionar Alumnos' : 'Ver Alumnos'}
                 </button>
             </div>
             )}
@@ -519,15 +533,14 @@ const HorariosPage = () => {
                 Administra los horarios de clases de todas las sucursales
             </p>
             </div>
-            {(user?.role === 'admin' || user?.role === 'instructor') && (
-            <button 
+            {/* ✅ CORREGIDO: Botón con permisos */}
+            <CreateButton 
+                module="horarios"
                 onClick={() => setShowCreateModal(true)}
-                className="btn-primary"
+                icon={<Plus className="w-5 h-5" />}
             >
-                <Plus className="w-5 h-5 mr-2" />
                 Nuevo Horario
-            </button>
-            )}
+            </CreateButton>
         </div>
 
         {/* Tarjetas de estadísticas */}

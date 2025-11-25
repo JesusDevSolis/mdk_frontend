@@ -26,12 +26,19 @@ import { horariosAPI, alumnosAPI } from '../../services/APIservice'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => {
     // ========================================
     // TODOS LOS HOOKS PRIMERO (ANTES DE CUALQUIER RETURN)
     // ========================================
     
     const { user } = useAuth()
+    // ✅ NUEVO: Hook de permisos
+    const { can } = usePermissions('horarios')
+    
     const [loading, setLoading] = useState(false)
     const [alumnosDisponibles, setAlumnosDisponibles] = useState([])
     const [searchTerm, setSearchTerm] = useState('')
@@ -257,7 +264,8 @@ const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => 
 
                     {/* Botones de acción */}
                     <div className="flex items-center gap-2">
-                        {(user?.role === 'admin' || user?.role === 'instructor') && (
+                        {/* ✅ CORREGIDO: Botón Editar con permisos */}
+                        <PermissionGuard module="horarios" action="update">
                             <button
                                 onClick={() => {
                                     onClose()
@@ -268,7 +276,7 @@ const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => 
                                 <Edit3 className="w-4 h-4" />
                                 Editar
                             </button>
-                        )}
+                        </PermissionGuard>
                         <button
                             onClick={onClose}
                             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -387,14 +395,17 @@ const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => 
                                         <Users className="w-5 h-5 text-primary-600" />
                                         Alumnos Inscritos ({alumnosInscritos.length})
                                     </h3>
-                                    {(user?.role === 'admin' || user?.role === 'instructor') && !horario.estaLleno && (
-                                        <button
-                                            onClick={() => setShowInscribirModal(true)}
-                                            className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
-                                        >
-                                            <UserPlus className="w-4 h-4" />
-                                            Inscribir Alumno
-                                        </button>
+                                    {/* ✅ CORREGIDO: Botón con permisos */}
+                                    {!horario.estaLleno && (
+                                        <PermissionGuard module="horarios" action="enrollStudents">
+                                            <button
+                                                onClick={() => setShowInscribirModal(true)}
+                                                className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
+                                            >
+                                                <UserPlus className="w-4 h-4" />
+                                                Inscribir Alumno
+                                            </button>
+                                        </PermissionGuard>
                                     )}
                                 </div>
 
@@ -436,7 +447,8 @@ const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => 
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    {(user?.role === 'admin' || user?.role === 'instructor') && (
+                                                    {/* ✅ CORREGIDO: Botón con permisos */}
+                                                    <PermissionGuard module="horarios" action="unenrollStudents">
                                                         <button
                                                             onClick={() => handleDesinscribir(alumno._id)}
                                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -444,7 +456,7 @@ const HorarioDetailsModal = ({ horario, isOpen, onClose, onEdit, onUpdate }) => 
                                                         >
                                                             <UserMinus className="w-4 h-4" />
                                                         </button>
-                                                    )}
+                                                    </PermissionGuard>
                                                 </div>
                                             )
                                         })}

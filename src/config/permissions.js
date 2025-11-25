@@ -110,16 +110,22 @@ const PERMISSIONS = {
             delete: true,
             viewAll: true,
             assignInstructors: true,
-            manageCapacity: true
+            manageCapacity: true,
+            enrollStudents: true, // ✅ AGREGADO: Inscribir alumnos
+            unenrollStudents: true, // ✅ AGREGADO: Desinscribir alumnos
+            changeStatus: true // ✅ AGREGADO: Cambiar estado
         },
         instructor: {
-            create: false, // Admin asigna horarios
+            create: false, // ✅ CORREGIDO: No puede crear
             read: true,
-            update: true, // Puede editar horarios donde es instructor
+            update: false, // ✅ CORREGIDO: No puede editar
             delete: false,
             viewAll: false, // Solo ve sus horarios
             assignInstructors: false,
-            manageCapacity: false
+            manageCapacity: false,
+            enrollStudents: false, // ✅ AGREGADO: No puede inscribir
+            unenrollStudents: false, // ✅ AGREGADO: No puede desinscribir
+            changeStatus: false // ✅ AGREGADO: No puede cambiar estado
         },
         padre: {
             create: false,
@@ -128,7 +134,10 @@ const PERMISSIONS = {
             delete: false,
             viewAll: false,
             assignInstructors: false,
-            manageCapacity: false
+            manageCapacity: false,
+            enrollStudents: false,
+            unenrollStudents: false,
+            changeStatus: false
         }
     },
 
