@@ -25,7 +25,15 @@ import PagoForm from '../../components/forms/PagoForm'
 import PagoDetailsModal from '../../components/modals/PagoDetailsModal'
 import ComprobanteUploadModal from '../../components/modals/ComprobanteUploadModal'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import { CreateButton, EditButton, DeleteButton } from '../../components/dashboard/PermissionButton'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const PagosPage = () => {
+  // ✅ NUEVO: Hook de permisos para módulo pagos
+  const { canCreate, canUpdate, canDelete, can, isAdmin } = usePermissions('pagos')
+
   const [searchParams, setSearchParams] = useSearchParams()
   
   // Leer filtro de URL al inicializar
@@ -46,7 +54,7 @@ const PagosPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
-    status: initialStatus, // Usar el filtro inicial de la URL
+    status: initialStatus,
     type: '',
     sucursal: ''
   })
@@ -103,19 +111,12 @@ const PagosPage = () => {
         ...filters
       }
 
-      // Limpiar filtros vacíos
-      Object.keys(params).forEach(key => {
-        if (params[key] === '' || params[key] === null) {
-          delete params[key]
-        }
-      })
-
       const response = await pagosAPI.getAll(params)
       setPagos(response.data)
       setPagination(prev => ({
         ...prev,
-        total: response.pagination.total,
-        totalPages: response.pagination.totalPages
+        total: response.pagination?.total || 0,
+        totalPages: response.pagination?.totalPages || 0
       }))
     } catch (error) {
       console.error('Error al cargar pagos:', error)
@@ -128,20 +129,7 @@ const PagosPage = () => {
   const loadStats = async () => {
     try {
       const response = await pagosAPI.getStats()
-      
-      // Calcular estadísticas
-      const byStatus = response.data.general.byStatus || {}
-      
-      setStats({
-        total: response.data.general.total || 0,
-        pagado: byStatus.pagado?.count || 0,
-        pendiente: byStatus.pendiente?.count || 0,
-        vencido: byStatus.vencido?.count || 0,
-        totalAmount: response.data.general.totalAmount || 0,
-        pagadoAmount: byStatus.pagado?.total || 0,
-        pendienteAmount: byStatus.pendiente?.total || 0,
-        vencidoAmount: byStatus.vencido?.total || 0
-      })
+      setStats(response.data)
     } catch (error) {
       console.error('Error al cargar estadísticas:', error)
     }
@@ -249,26 +237,26 @@ const PagosPage = () => {
       pagado: {
         bg: 'bg-green-100',
         text: 'text-green-800',
-        icon: CheckCircle,
-        label: 'Pagado'
+        label: 'Pagado',
+        icon: CheckCircle
       },
       pendiente: {
         bg: 'bg-yellow-100',
         text: 'text-yellow-800',
-        icon: Clock,
-        label: 'Pendiente'
+        label: 'Pendiente',
+        icon: Clock
       },
       vencido: {
         bg: 'bg-red-100',
         text: 'text-red-800',
-        icon: AlertCircle,
-        label: 'Vencido'
+        label: 'Vencido',
+        icon: AlertCircle
       },
       cancelado: {
         bg: 'bg-gray-100',
         text: 'text-gray-800',
-        icon: XCircle,
-        label: 'Cancelado'
+        label: 'Cancelado',
+        icon: XCircle
       }
     }
 
@@ -276,8 +264,8 @@ const PagosPage = () => {
     const Icon = badge.icon
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-        <Icon className="w-3 h-3 mr-1" />
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+        <Icon className="w-3 h-3" />
         {badge.label}
       </span>
     )
@@ -287,16 +275,16 @@ const PagosPage = () => {
     const types = {
       colegiatura: { label: 'Colegiatura', color: 'blue' },
       inscripcion: { label: 'Inscripción', color: 'purple' },
-      uniforme: { label: 'Uniforme', color: 'indigo' },
-      examen: { label: 'Examen', color: 'pink' },
-      equipo: { label: 'Equipo', color: 'cyan' },
+      uniforme: { label: 'Uniforme', color: 'green' },
+      examen: { label: 'Examen', color: 'yellow' },
+      equipo: { label: 'Equipo', color: 'indigo' },
       otro: { label: 'Otro', color: 'gray' }
     }
 
     const typeInfo = types[type] || types.otro
 
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-${typeInfo.color}-100 text-${typeInfo.color}-800`}>
+      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-${typeInfo.color}-100 text-${typeInfo.color}-800`}>
         {typeInfo.label}
       </span>
     )
@@ -328,13 +316,15 @@ const PagosPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
           <p className="text-gray-600 mt-1">Administra los pagos de colegiaturas, uniformes y más</p>
         </div>
-        <button
+        
+        {/* ✅ CORREGIDO: Botón de crear con permisos */}
+        <CreateButton 
+          module="pagos"
           onClick={handleCreate}
-          className="btn-primary flex items-center gap-2"
+          icon={<Plus className="w-5 h-5" />}
         >
-          <Plus className="w-5 h-5" />
           Registrar Pago
-        </button>
+        </CreateButton>
       </div>
 
       {/* Estadísticas */}
@@ -355,7 +345,7 @@ const PagosPage = () => {
             </div>
           </div>
           {!filters.status && (
-            <p className="text-xs text-blue-600 mt-2 font-medium">✓ Todos los pagos</p>
+            <p className="text-xs text-blue-600 mt-2 font-medium">✓ Filtro activo</p>
           )}
         </div>
 
@@ -501,7 +491,7 @@ const PagosPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todas</option>
-                  {sucursales.map(sucursal => (
+                  {sucursales.map((sucursal) => (
                     <option key={sucursal._id} value={sucursal._id}>
                       {sucursal.name}
                     </option>
@@ -510,11 +500,10 @@ const PagosPage = () => {
               </div>
             </div>
 
-            {/* Botón limpiar filtros */}
             <div className="mt-4 flex justify-end">
               <button
                 onClick={clearFilters}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-gray-600 hover:text-gray-900"
               >
                 Limpiar filtros
               </button>
@@ -538,7 +527,7 @@ const PagosPage = () => {
                 ? 'No se encontraron pagos con los filtros aplicados'
                 : 'Comienza registrando un nuevo pago'}
             </p>
-            {!searchTerm && !filters.status && !filters.type && !filters.sucursal && (
+            {!searchTerm && !filters.status && !filters.type && !filters.sucursal && canCreate && (
               <div className="mt-6">
                 <button onClick={handleCreate} className="btn-primary">
                   <Plus className="w-5 h-5 mr-2" />
@@ -578,14 +567,12 @@ const PagosPage = () => {
                   {pagos.map((pago) => (
                     <tr key={pago._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {pago.alumno?.firstName} {pago.alumno?.lastName}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {pago.alumno?.enrollment?.studentId}
-                            </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {pago.alumno?.firstName} {pago.alumno?.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {pago.alumno?.enrollment?.studentId}
                           </div>
                         </div>
                       </td>
@@ -610,6 +597,7 @@ const PagosPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Ver detalles - Siempre visible */}
                           <button
                             onClick={() => handleView(pago)}
                             className="text-blue-600 hover:text-blue-900"
@@ -618,43 +606,57 @@ const PagosPage = () => {
                             <Eye className="w-5 h-5" />
                           </button>
                           
+                          {/* ✅ CORREGIDO: Botones con permisos */}
                           {pago.status === 'pendiente' && (
                             <>
-                              <button
-                                onClick={() => handleEdit(pago)}
-                                className="text-yellow-600 hover:text-yellow-900"
-                                title="Editar"
-                              >
-                                <Edit className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleMarkAsPaid(pago)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Marcar como pagado"
-                              >
-                                <CheckCircle className="w-5 h-5" />
-                              </button>
+                              {/* Editar - Solo admin */}
+                              <PermissionGuard module="pagos" action="update">
+                                <button
+                                  onClick={() => handleEdit(pago)}
+                                  className="text-yellow-600 hover:text-yellow-900"
+                                  title="Editar"
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                              </PermissionGuard>
+
+                              {/* Marcar como pagado - Solo admin */}
+                              <PermissionGuard module="pagos" action="approvePayments">
+                                <button
+                                  onClick={() => handleMarkAsPaid(pago)}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Marcar como pagado"
+                                >
+                                  <CheckCircle className="w-5 h-5" />
+                                </button>
+                              </PermissionGuard>
                             </>
                           )}
                           
+                          {/* Subir comprobante - Admin e Instructor */}
                           {(pago.status === 'pendiente' || pago.status === 'vencido') && (
-                            <button
-                              onClick={() => handleUploadComprobante(pago)}
-                              className="text-purple-600 hover:text-purple-900"
-                              title="Subir comprobante"
-                            >
-                              <Upload className="w-5 h-5" />
-                            </button>
+                            <PermissionGuard module="pagos" action="uploadReceipt">
+                              <button
+                                onClick={() => handleUploadComprobante(pago)}
+                                className="text-purple-600 hover:text-purple-900"
+                                title="Subir comprobante"
+                              >
+                                <Upload className="w-5 h-5" />
+                              </button>
+                            </PermissionGuard>
                           )}
                           
+                          {/* Eliminar - Solo admin */}
                           {pago.status !== 'pagado' && (
-                            <button
-                              onClick={() => handleDelete(pago)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
+                            <PermissionGuard module="pagos" action="delete">
+                              <button
+                                onClick={() => handleDelete(pago)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </PermissionGuard>
                           )}
                         </div>
                       </td>
@@ -694,43 +696,57 @@ const PagosPage = () => {
                   </div>
 
                   <div className="mt-3 flex items-center justify-end gap-2">
+                    {/* Ver detalles - Siempre visible */}
                     <button
                       onClick={() => handleView(pago)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
+                    
+                    {/* ✅ CORREGIDO: Botones mobile con permisos */}
                     {pago.status === 'pendiente' && (
                       <>
-                        <button
-                          onClick={() => handleEdit(pago)}
-                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleMarkAsPaid(pago)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
+                        <PermissionGuard module="pagos" action="update">
+                          <button
+                            onClick={() => handleEdit(pago)}
+                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                        </PermissionGuard>
+                        
+                        <PermissionGuard module="pagos" action="approvePayments">
+                          <button
+                            onClick={() => handleMarkAsPaid(pago)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                          </button>
+                        </PermissionGuard>
                       </>
                     )}
+                    
                     {(pago.status === 'pendiente' || pago.status === 'vencido') && (
-                      <button
-                        onClick={() => handleUploadComprobante(pago)}
-                        className="p-2 text-purple-600 hover:bg-purple-50 rounded"
-                      >
-                        <Upload className="w-5 h-5" />
-                      </button>
+                      <PermissionGuard module="pagos" action="uploadReceipt">
+                        <button
+                          onClick={() => handleUploadComprobante(pago)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded"
+                        >
+                          <Upload className="w-5 h-5" />
+                        </button>
+                      </PermissionGuard>
                     )}
+                    
                     {pago.status !== 'pagado' && (
-                      <button
-                        onClick={() => handleDelete(pago)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <PermissionGuard module="pagos" action="delete">
+                        <button
+                          onClick={() => handleDelete(pago)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </PermissionGuard>
                     )}
                   </div>
                 </div>
@@ -768,7 +784,7 @@ const PagosPage = () => {
                         </span>
                         {' '}de{' '}
                         <span className="font-medium">{pagination.total}</span>
-                        {' '}pagos
+                        {' '}resultados
                       </p>
                     </div>
                     <div>
@@ -780,32 +796,28 @@ const PagosPage = () => {
                         >
                           Anterior
                         </button>
-                        {[...Array(pagination.totalPages)].map((_, index) => {
-                          const pageNumber = index + 1
-                          // Mostrar solo algunas páginas
+                        {[...Array(pagination.totalPages)].map((_, i) => {
+                          const pageNum = i + 1
                           if (
-                            pageNumber === 1 ||
-                            pageNumber === pagination.totalPages ||
-                            (pageNumber >= pagination.page - 1 && pageNumber <= pagination.page + 1)
+                            pageNum === 1 ||
+                            pageNum === pagination.totalPages ||
+                            (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
                           ) {
                             return (
                               <button
-                                key={pageNumber}
-                                onClick={() => handlePageChange(pageNumber)}
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
                                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                  pageNumber === pagination.page
+                                  pageNum === pagination.page
                                     ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                                     : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                                 }`}
                               >
-                                {pageNumber}
+                                {pageNum}
                               </button>
                             )
-                          } else if (
-                            pageNumber === pagination.page - 2 ||
-                            pageNumber === pagination.page + 2
-                          ) {
-                            return <span key={pageNumber} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                          } else if (pageNum === pagination.page - 2 || pageNum === pagination.page + 2) {
+                            return <span key={pageNum} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
                           }
                           return null
                         })}
@@ -837,17 +849,15 @@ const PagosPage = () => {
         />
       )}
 
-      {showDetails && selectedPago && (
+      {showDetails && (
         <PagoDetailsModal
           isOpen={showDetails}
           onClose={() => setShowDetails(false)}
           pago={selectedPago}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
         />
       )}
 
-      {showUploadModal && selectedPago && (
+      {showUploadModal && (
         <ComprobanteUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}

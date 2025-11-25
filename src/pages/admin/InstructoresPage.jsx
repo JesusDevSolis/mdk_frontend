@@ -27,7 +27,15 @@ import InstructorForm from '../../components/forms/InstructorForm'
 import InstructorDetailsModal from '../../components/modals/InstructorDetailsModal'
 import toast from 'react-hot-toast'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import { CreateButton } from '../../components/dashboard/PermissionButton'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const InstructoresPage = () => {
+    // ✅ NUEVO: Hook de permisos
+    const { canCreate, canUpdate, canDelete, isAdmin } = usePermissions('instructores')
+    
     const { user } = useAuth()
     const [instructores, setInstructores] = useState([])
     const [sucursales, setSucursales] = useState([])
@@ -98,34 +106,17 @@ const InstructoresPage = () => {
     const loadInstructores = async () => {
         try {
         setLoading(true)
+        const params = new URLSearchParams()
+
+        if (filters.sucursal) params.append('sucursal', filters.sucursal)
+        if (filters.status !== 'all') params.append('status', filters.status)
+        if (filters.belt) params.append('belt', filters.belt)
+        if (searchTerm) params.append('search', searchTerm)
+
+        const response = await instructoresAPI.getAll(params.toString())
         
-        const params = {
-            search: searchTerm
-        }
-
-        if (filters.sucursal) params.sucursal = filters.sucursal
-        if (filters.status !== 'all') params.isActive = filters.status === 'active'
-
-        const response = await instructoresAPI.getAll(params)
-
         if (response.success) {
-            let instructoresData = response.data || []
-            
-            // Filtrar por cinturón si está seleccionado
-            if (filters.belt) {
-            if (filters.belt === 'negro') {
-                // Filtrar todos los cinturones negros (negro, negro_1dan, negro_2dan, etc.)
-                instructoresData = instructoresData.filter(instructor => 
-                instructor.instructorInfo?.belt?.includes('negro')
-                )
-            } else {
-                // Filtrar por cinturón específico
-                instructoresData = instructoresData.filter(instructor => 
-                instructor.instructorInfo?.belt === filters.belt
-                )
-            }
-            }
-
+            const instructoresData = response.data || []
             setInstructores(instructoresData)
             calculateStats(instructoresData)
         }
@@ -139,16 +130,15 @@ const InstructoresPage = () => {
     }
 
     const calculateStats = (data) => {
-        const total = data.length
-        const activos = data.filter(i => i.isActive).length
-        const inactivos = data.filter(i => !i.isActive).length
-        const cinturonNegro = data.filter(i => 
-        i.instructorInfo?.belt?.includes('negro')
-        ).length
-
-        setStats({ total, activos, inactivos, cinturonNegro })
+        setStats({
+        total: data.length,
+        activos: data.filter(i => i.isActive).length,
+        inactivos: data.filter(i => !i.isActive).length,
+        cinturonNegro: data.filter(i => i.instructorInfo?.belt?.includes('negro')).length
+        })
     }
 
+    // Handlers
     const handleCreateInstructor = () => {
         setSelectedInstructor(null)
         setShowCreateModal(true)
@@ -160,12 +150,6 @@ const InstructoresPage = () => {
         setShowActions(null)
     }
 
-    const handleEditFromDetails = (instructor) => {
-        setShowDetailsModal(false) // Cerrar modal de detalles
-        setSelectedInstructor(instructor)
-        setShowEditModal(true) // Abrir modal de edición
-    }
-
     const handleViewDetails = (instructor) => {
         setSelectedInstructor(instructor)
         setShowDetailsModal(true)
@@ -174,36 +158,57 @@ const InstructoresPage = () => {
 
     const handleToggleStatus = async (instructor) => {
         try {
-        const response = await instructoresAPI.toggleStatus(instructor._id)
+        const newStatus = !instructor.isActive
+        await instructoresAPI.toggleStatus(instructor._id)
         
-        if (response.success) {
-            toast.success(`Instructor ${instructor.isActive ? 'desactivado' : 'activado'} exitosamente`)
-            loadInstructores()
-        }
+        toast.success(`Instructor ${newStatus ? 'activado' : 'desactivado'} correctamente`)
+        loadInstructores()
+        setShowActions(null)
         } catch (error) {
         console.error('Error al cambiar estado:', error)
-        toast.error('Error al cambiar estado del instructor')
+        toast.error('Error al cambiar el estado del instructor')
         }
-        setShowActions(null)
     }
 
     const handleDeleteInstructor = async (instructor) => {
-        if (!window.confirm(`¿Estás seguro de desactivar al instructor ${instructor.name}?`)) {
+        if (!window.confirm(`¿Estás seguro de eliminar al instructor ${instructor.name}?`)) {
         return
         }
 
         try {
-        const response = await instructoresAPI.delete(instructor._id)
-        
-        if (response.success) {
-            toast.success('Instructor desactivado exitosamente')
-            loadInstructores()
-        }
+        await instructoresAPI.delete(instructor._id)
+        toast.success('Instructor eliminado correctamente')
+        loadInstructores()
+        setShowActions(null)
         } catch (error) {
         console.error('Error al eliminar instructor:', error)
-        toast.error('Error al desactivar instructor')
+        toast.error(error.response?.data?.message || 'Error al eliminar instructor')
         }
-        setShowActions(null)
+    }
+
+    const handleFormSuccess = () => {
+        setShowCreateModal(false)
+        setShowEditModal(false)
+        loadInstructores()
+    }
+
+    const handleCardFilter = (filterType) => {
+        switch(filterType) {
+        case 'all':
+            setFilters({ sucursal: '', status: 'all', belt: '' })
+            break
+        case 'activos':
+            setFilters({ ...filters, status: 'active', belt: '' })
+            break
+        case 'inactivos':
+            setFilters({ ...filters, status: 'inactive', belt: '' })
+            break
+        case 'cinturonNegro':
+            setFilters({ ...filters, belt: 'negro', status: 'all' })
+            break
+        default:
+            break
+        }
     }
 
     const resetFilters = () => {
@@ -215,88 +220,45 @@ const InstructoresPage = () => {
         setSearchTerm('')
     }
 
-    // ✅ NUEVO: Manejadores para filtros desde tarjetas
-    const handleCardFilter = (filterType) => {
-        setSearchTerm('') // Limpiar búsqueda
-        setShowAdvancedFilters(false) // Cerrar filtros avanzados
-        
-        switch(filterType) {
-        case 'all':
-            // Limpiar todos los filtros
-            setFilters({
-            sucursal: '',
-            status: 'all',
-            belt: ''
-            })
-            break
-        case 'activos':
-            setFilters({
-            sucursal: '',
-            status: 'active',
-            belt: ''
-            })
-            break
-        case 'inactivos':
-            setFilters({
-            sucursal: '',
-            status: 'inactive',
-            belt: ''
-            })
-            break
-        case 'cinturonNegro':
-            setFilters({
-            sucursal: '',
-            status: 'all',
-            belt: 'negro'
-            })
-            break
-        default:
-            break
-        }
-    }
-
-    const getBeltDisplay = (belt) => {
-        if (!belt) return 'N/A'
-        
-        const beltNames = {
-        'blanco': 'Blanca',
-        'amarillo': 'Amarilla',
-        'verde': 'Verde',
-        'azul': 'Azul',
-        'rojo': 'Roja',
-        'negro_1dan': 'Negra 1° Dan',
-        'negro_2dan': 'Negra 2° Dan',
-        'negro_3dan': 'Negra 3° Dan',
-        'negro_4dan': 'Negra 4° Dan',
-        'negro_5dan': 'Negra 5° Dan',
-        'negro_6dan': 'Negra 6° Dan',
-        'negro_7dan': 'Negra 7° Dan',
-        'negro_8dan': 'Negra 8° Dan',
-        'negro_9dan': 'Negra 9° Dan'
-        }
-        
-        return beltNames[belt] || belt
-    }
-
+    // Helper functions
     const getBeltColor = (belt) => {
         if (!belt) return 'bg-gray-100 text-gray-800'
         
+        if (belt.includes('negro')) return 'bg-gray-900 text-white'
         if (belt === 'blanco') return 'bg-white text-gray-800 border border-gray-300'
         if (belt === 'amarillo') return 'bg-yellow-100 text-yellow-800'
         if (belt === 'verde') return 'bg-green-100 text-green-800'
         if (belt === 'azul') return 'bg-blue-100 text-blue-800'
         if (belt === 'rojo') return 'bg-red-100 text-red-800'
-        if (belt.includes('negro')) return 'bg-black text-white'
         
         return 'bg-gray-100 text-gray-800'
     }
 
+    const getBeltDisplay = (belt) => {
+        if (!belt) return 'Sin cinturón'
+        
+        const beltNames = {
+        'blanco': 'Blanco',
+        'amarillo': 'Amarillo',
+        'verde': 'Verde',
+        'azul': 'Azul',
+        'rojo': 'Rojo',
+        'negro_1dan': 'Negro 1° Dan',
+        'negro_2dan': 'Negro 2° Dan',
+        'negro_3dan': 'Negro 3° Dan',
+        'negro_4dan': 'Negro 4° Dan',
+        'negro_5dan': 'Negro 5° Dan'
+        }
+        
+        return beltNames[belt] || belt
+    }
+
     if (loading && instructores.length === 0) {
         return (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-96">
             <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando instructores...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando instructores...</p>
             </div>
         </div>
         )
@@ -312,13 +274,15 @@ const InstructoresPage = () => {
                 Gestiona los instructores de tu escuela de taekwondo
             </p>
             </div>
-            <button
+            
+            {/* ✅ CORREGIDO: Botón de crear con permisos */}
+            <CreateButton 
+            module="instructores"
             onClick={handleCreateInstructor}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            icon={<Plus className="w-5 h-5" />}
             >
-            <Plus className="w-5 h-5" />
             Nuevo Instructor
-            </button>
+            </CreateButton>
         </div>
 
         {/* Stats Cards */}
@@ -384,7 +348,7 @@ const InstructoresPage = () => {
                 <p className="text-2xl font-bold text-red-600 mt-2">{stats.inactivos}</p>
                 </div>
                 <div className="p-3 bg-red-50 rounded-lg">
-                <X className="w-6 h-6 text-red-600" />
+                <Shield className="w-6 h-6 text-red-600" />
                 </div>
             </div>
             {filters.status === 'inactive' && !filters.belt && (
@@ -631,6 +595,7 @@ const InstructoresPage = () => {
                                 onClick={() => setShowActions(null)}
                                 />
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                                {/* Ver Detalles - Siempre visible */}
                                 <button
                                     onClick={() => handleViewDetails(instructor)}
                                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -638,28 +603,40 @@ const InstructoresPage = () => {
                                     <Eye className="w-4 h-4" />
                                     Ver Detalles
                                 </button>
-                                <button
+
+                                {/* ✅ CORREGIDO: Editar - Solo admin */}
+                                <PermissionGuard module="instructores" action="update">
+                                    <button
                                     onClick={() => handleEditInstructor(instructor)}
                                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
+                                    >
                                     <Edit3 className="w-4 h-4" />
                                     Editar
-                                </button>
-                                <button
+                                    </button>
+                                </PermissionGuard>
+
+                                {/* ✅ CORREGIDO: Cambiar estado - Solo admin */}
+                                <PermissionGuard module="instructores" action="toggleStatus">
+                                    <button
                                     onClick={() => handleToggleStatus(instructor)}
                                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
+                                    >
                                     <UserCheck className="w-4 h-4" />
                                     {instructor.isActive ? 'Desactivar' : 'Activar'}
-                                </button>
-                                <div className="border-t border-gray-100 my-1" />
-                                <button
+                                    </button>
+                                </PermissionGuard>
+
+                                {/* ✅ CORREGIDO: Eliminar - Solo admin */}
+                                <PermissionGuard module="instructores" action="delete">
+                                    <div className="border-t border-gray-100 my-1" />
+                                    <button
                                     onClick={() => handleDeleteInstructor(instructor)}
                                     className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                >
+                                    >
                                     <Trash2 className="w-4 h-4" />
                                     Eliminar
-                                </button>
+                                    </button>
+                                </PermissionGuard>
                                 </div>
                             </>
                             )}
@@ -687,33 +664,25 @@ const InstructoresPage = () => {
             <InstructorForm
             isOpen={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            onSuccess={loadInstructores}
-            mode="create"
+            onSuccess={handleFormSuccess}
             />
         )}
 
         {showEditModal && selectedInstructor && (
             <InstructorForm
-            instructor={selectedInstructor}
             isOpen={showEditModal}
-            onClose={() => {
-                setShowEditModal(false)
-                setSelectedInstructor(null)
-            }}
-            onSuccess={loadInstructores}
+            onClose={() => setShowEditModal(false)}
+            onSuccess={handleFormSuccess}
+            instructor={selectedInstructor}
             mode="edit"
             />
         )}
 
         {showDetailsModal && selectedInstructor && (
             <InstructorDetailsModal
-            instructor={selectedInstructor}
             isOpen={showDetailsModal}
-            onClose={() => {
-                setShowDetailsModal(false)
-                setSelectedInstructor(null)
-            }}
-            onEdit={handleEditFromDetails}
+            onClose={() => setShowDetailsModal(false)}
+            instructor={selectedInstructor}
             />
         )}
         </div>

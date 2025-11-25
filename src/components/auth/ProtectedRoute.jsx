@@ -3,8 +3,8 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import LoadingSpinner from '../common/LoadingSpinner'
 
-const ProtectedRoute = ({ children, requiredRole = null }) => {
-  const { isAuthenticated, isLoading, hasRole } = useAuth()
+const ProtectedRoute = ({ children, requiredRole = null, allowedRoles = null }) => {
+  const { isAuthenticated, isLoading, hasRole, hasAnyRole } = useAuth()
   const location = useLocation()
 
   // Mostrar spinner mientras se verifica la autenticación
@@ -17,7 +17,27 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // Si se requiere un rol específico y el usuario no lo tiene
+  // ✅ NUEVO: Si se especifican múltiples roles permitidos
+  if (allowedRoles && Array.isArray(allowedRoles)) {
+    if (!hasAnyRole(allowedRoles)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-red-600 mb-4">403</h1>
+            <p className="text-gray-600 mb-8">No tienes permisos para acceder a esta página</p>
+            <button 
+              onClick={() => window.history.back()}
+              className="btn-primary"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      )
+    }
+  }
+
+  // Si se requiere un rol específico único
   if (requiredRole && !hasRole(requiredRole)) {
     return (
       <div className="min-h-screen flex items-center justify-center">

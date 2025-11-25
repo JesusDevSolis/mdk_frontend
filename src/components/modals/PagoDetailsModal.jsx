@@ -20,7 +20,14 @@ import {
     Users
 } from 'lucide-react'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
+    // ✅ NUEVO: Hook de permisos
+    const { canUpdate, canDelete } = usePermissions('pagos')
+    
     if (!isOpen || !pago) return null
 
     console.log('🔍 Pago completo en modal:', pago)
@@ -539,6 +546,8 @@ const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
             <div className="flex items-center gap-3">
                 {pago.status !== 'pagado' && pago.status !== 'cancelado' && (
                 <>
+                    {/* ✅ CORREGIDO: Botón Editar - Solo admin */}
+                    <PermissionGuard module="pagos" action="update">
                     <button
                     onClick={() => {
                         onEdit(pago)
@@ -549,7 +558,10 @@ const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
                     <Edit className="w-5 h-5" />
                     Editar
                     </button>
+                    </PermissionGuard>
 
+                    {/* ✅ CORREGIDO: Botón Eliminar - Solo admin */}
+                    <PermissionGuard module="pagos" action="delete">
                     <button
                     onClick={() => {
                         if (window.confirm('¿Estás seguro de eliminar este pago?')) {
@@ -562,6 +574,7 @@ const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
                     <Trash2 className="w-5 h-5" />
                     Eliminar
                     </button>
+                    </PermissionGuard>
                 </>
                 )}
             </div>
