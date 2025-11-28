@@ -12,9 +12,9 @@
  */
 
 const PERMISSIONS = {
-    // ============================================
-    // DASHBOARD
-    // ============================================
+  // ============================================
+  // DASHBOARD
+  // ============================================
     dashboard: {
         admin: {
             read: true,
@@ -33,9 +33,11 @@ const PERMISSIONS = {
         }
     },
 
-    // ============================================
-    // ALUMNOS
-    // ============================================
+  // ============================================
+  // ALUMNOS
+  // ============================================
+  // ALUMNOS
+  // ============================================
     alumnos: {
         admin: {
             create: true,
@@ -47,13 +49,13 @@ const PERMISSIONS = {
             manageEnrollment: true
         },
         instructor: {
-            create: true,
+            create: false,            
             read: true,
-            update: true,
-            delete: false, // No puede eliminar
+            update: false,            
+            delete: false,
             viewAll: false, // Solo ve alumnos de su sucursal
-            exportData: true,
-            manageEnrollment: true
+            exportData: true,          // Puede exportar para reportes
+            manageEnrollment: false   
         },
         padre: {
             create: false,
@@ -111,33 +113,33 @@ const PERMISSIONS = {
             viewAll: true,
             assignInstructors: true,
             manageCapacity: true,
-            enrollStudents: true, // ✅ AGREGADO: Inscribir alumnos
-            unenrollStudents: true, // ✅ AGREGADO: Desinscribir alumnos
-            changeStatus: true // ✅ AGREGADO: Cambiar estado
+            enrollStudents: true, 
+            unenrollStudents: true,
+            changeStatus: true 
         },
         instructor: {
-            create: false, // ✅ CORREGIDO: No puede crear
+            create: false, 
             read: true,
-            update: false, // ✅ CORREGIDO: No puede editar
-            delete: false,
-            viewAll: false, // Solo ve sus horarios
-            assignInstructors: false,
-            manageCapacity: false,
-            enrollStudents: false, // ✅ AGREGADO: No puede inscribir
-            unenrollStudents: false, // ✅ AGREGADO: No puede desinscribir
-            changeStatus: false // ✅ AGREGADO: No puede cambiar estado
-        },
-        padre: {
-            create: false,
-            read: false, // Solo verá horarios de sus hijos (implementar después)
-            update: false,
+            update: false, 
             delete: false,
             viewAll: false,
             assignInstructors: false,
             manageCapacity: false,
-            enrollStudents: false,
+            enrollStudents: false, 
             unenrollStudents: false,
             changeStatus: false
+        },
+        padre: {
+        create: false,
+        read: false, // Solo verá horarios de sus hijos (implementar después)
+        update: false,
+        delete: false,
+        viewAll: false,
+        assignInstructors: false,
+        manageCapacity: false,
+        enrollStudents: false,
+        unenrollStudents: false,
+        changeStatus: false
         }
     },
 
@@ -226,18 +228,18 @@ const PERMISSIONS = {
             manageSchedule: true,
             manageCertifications: true,
             viewSalary: true,
-            toggleStatus: true // ✅ Activar/Desactivar instructores
+            toggleStatus: true 
         },
         instructor: {
             create: false,
             read: true,
-            update: false, // ✅ CORREGIDO: No puede editar (ni siquiera su perfil)
+            update: false, 
             delete: false,
             viewAll: false, // Solo ve instructores de su sucursal
             manageSchedule: false,
             manageCertifications: false,
             viewSalary: false, // No ve salarios de otros
-            toggleStatus: false // ✅ No puede cambiar estados
+            toggleStatus: false 
         },
         padre: {
             create: false,

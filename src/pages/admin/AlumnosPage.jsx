@@ -22,11 +22,20 @@ import {
 } from 'lucide-react'
 import { alumnosAPI, sucursalesAPI, utils } from '../../services/APIservice'
 import { useAuth } from '../../context/AuthContext'
+
+// Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import { CreateButton } from '../../components/dashboard/PermissionButton'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 import AlumnoForm from '../../components/forms/AlumnoForm'
 import AlumnoDetailsModal from '../../components/modals/AlumnoDetailsModal'
 import toast from 'react-hot-toast'
 
 const AlumnosPage = () => {
+  // Hook de permisos
+  const { canCreate, canUpdate, canDelete } = usePermissions('alumnos')
+  
   const { user } = useAuth()
   const [alumnos, setAlumnos] = useState([])
   const [sucursales, setSucursales] = useState([])
@@ -56,7 +65,7 @@ const AlumnosPage = () => {
     gender: ''
   })
 
-  // ✅ SOLUCIÓN: Función para calcular edad (del archivo original)
+  // Función para calcular edad (del archivo original)
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null
     
@@ -72,12 +81,12 @@ const AlumnosPage = () => {
     return age
   }
 
-  // ✅ SOLUCIÓN: Cargar datos iniciales (sin duplicar llamadas)
+  // Cargar datos iniciales (sin duplicar llamadas)
   useEffect(() => {
     loadInitialData()
   }, [])
 
-  // ✅ SOLUCIÓN: Filtros con debounce (evita múltiples llamadas)
+  // Filtros con debounce (evita múltiples llamadas)
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
       loadAlumnos()
@@ -100,6 +109,9 @@ const AlumnosPage = () => {
 
       if (sucursalesResponse.success) {
         setSucursales(sucursalesResponse.data.sucursales || [])
+        console.log('📍 Sucursales cargadas:', sucursalesResponse.data.sucursales?.length || 0)
+      } else {
+        console.error('❌ Error cargando sucursales:', sucursalesResponse.message)
       }
     } catch (error) {
       console.error('Error cargando datos iniciales:', error)
@@ -113,7 +125,7 @@ const AlumnosPage = () => {
     try {
       setLoading(true)
       
-      // ✅ SOLUCIÓN: Crear objeto de parámetros correctamente
+      // Crear objeto de parámetros correctamente
       const params = {}
       
       if (searchTerm) params.search = searchTerm
@@ -124,7 +136,7 @@ const AlumnosPage = () => {
       if (filters.tutor) params.tutor = filters.tutor
       if (filters.gender) params.gender = filters.gender
       
-      // ✅ SOLUCIÓN: Pasar objeto de parámetros (no string)
+      // Pasar objeto de parámetros (no string)
       const response = await alumnosAPI.getAll(params)
       
       if (response.success) {
@@ -203,7 +215,7 @@ const AlumnosPage = () => {
     setShowAdvancedFilters(false)
   }
 
-  // ✅ NUEVO: Manejadores para filtros desde tarjetas
+  // Manejadores para filtros desde tarjetas
   const handleCardFilter = (filterType) => {
     setSearchTerm('') // Limpiar búsqueda
     setShowAdvancedFilters(false) // Cerrar filtros avanzados
@@ -255,7 +267,7 @@ const AlumnosPage = () => {
     }
   }
 
-  // ✅ NUEVO: Función para contar filtros activos
+  // Función para contar filtros activos
   const getActiveFiltersCount = () => {
     return Object.values(filters).filter(value => value && value !== 'all').length
   }
@@ -296,6 +308,7 @@ const AlumnosPage = () => {
               
               {showActions === alumno._id && (
                 <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[150px] z-[9999]">
+                  {/* Ver detalles - Siempre visible */}
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
@@ -306,34 +319,36 @@ const AlumnosPage = () => {
                     <Eye className="w-4 h-4" />
                     Ver detalles
                   </button>
-                  {(user?.role === 'admin' || user?.role === 'instructor') && (
-                    <>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEdit(alumno)
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Editar
-                      </button>
-                      
-                      {/* Separador */}
-                      <div className="border-t border-gray-100 my-1"></div>
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(alumno)
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar
-                      </button>
-                    </>
-                  )}
+                  
+                  {/* Botones con permisos */}
+                  <PermissionGuard module="alumnos" action="update">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(alumno)
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Editar
+                    </button>
+                  </PermissionGuard>
+                  
+                  <PermissionGuard module="alumnos" action="delete">
+                    {/* Separador */}
+                    <div className="border-t border-gray-100 my-1"></div>
+                    
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(alumno)
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar
+                    </button>
+                  </PermissionGuard>
                 </div>
               )}
             </div>
@@ -411,15 +426,14 @@ const AlumnosPage = () => {
           <p className="text-gray-600">{stats.total} alumnos registrados</p>
         </div>
         
-        {(user?.role === 'admin' || user?.role === 'instructor') && (
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Nuevo Alumno
-          </button>
-        )}
+        {/* Botón con permisos */}
+        <CreateButton 
+          module="alumnos"
+          onClick={() => setShowCreateModal(true)}
+          icon={<Plus className="w-4 h-4" />}
+        >
+          Nuevo Alumno
+        </CreateButton>
       </div>
 
       {/* Estadísticas */}
@@ -517,7 +531,7 @@ const AlumnosPage = () => {
         </div>
       </div>
 
-      {/* ✅ SECCIÓN DE BÚSQUEDA Y FILTROS MODERNIZADA */}
+      {/* SECCIÓN DE BÚSQUEDA Y FILTROS MODERNIZADA */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {/* Barra principal de búsqueda */}
         <div className="p-4">
@@ -596,7 +610,7 @@ const AlumnosPage = () => {
           </div>
         </div>
 
-        {/* ✅ FILTROS AVANZADOS COLAPSABLES */}
+        {/* FILTROS AVANZADOS COLAPSABLES */}
         {showAdvancedFilters && (
           <div className="border-t border-gray-200 bg-gray-50 p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -696,15 +710,14 @@ const AlumnosPage = () => {
               : 'Comienza registrando tu primer alumno'
             }
           </p>
-          {(user?.role === 'admin' || user?.role === 'instructor') && (
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Registrar Primer Alumno
-            </button>
-          )}
+          {/* Botón con permisos */}
+          <CreateButton 
+            module="alumnos"
+            onClick={() => setShowCreateModal(true)}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Registrar Primer Alumno
+          </CreateButton>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

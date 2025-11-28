@@ -21,7 +21,14 @@ import {
 } from 'lucide-react'
 import { utils, BELT_LEVELS_DISPLAY, GENDER_OPTIONS, STATUS_OPTIONS } from '../../services/APIservice'
 
+// Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
+  // Hook de permisos
+  const { canUpdate } = usePermissions('alumnos')
+  
   if (!isOpen || !alumno) return null
 
   // FUNCIÓN PRINCIPAL PARA CALCULAR EDAD
@@ -152,17 +159,20 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
 
           {/* Botones de acción */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                console.log('🔍 DATOS COMPLETOS DEL ALUMNO PARA EDITAR:', alumno) 
-                onClose() 
-                onEdit(alumno)
-              }}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <Edit3 className="w-4 h-4" />
-              Editar
-            </button>
+            {/* ✅ CORREGIDO: Botón Editar con permisos */}
+            <PermissionGuard module="alumnos" action="update">
+              <button
+                onClick={() => {
+                  console.log('🔍 DATOS COMPLETOS DEL ALUMNO PARA EDITAR:', alumno) 
+                  onClose() 
+                  onEdit(alumno)
+                }}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                Editar
+              </button>
+            </PermissionGuard>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
