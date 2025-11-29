@@ -81,30 +81,59 @@ const SucursalForm = ({
     }
   }
 
-  // Efecto para cargar datos iniciales
+  // ✅ CORREGIDO: Efecto para cargar datos iniciales
   useEffect(() => {
-    if (isOpen) {
-      loadManagers()
-      
-      if (mode === 'edit' && sucursal) {
-        // Llenar formulario con datos existentes
-        Object.keys(sucursal).forEach(key => {
-          if (key !== '_id' && key !== 'logo' && key !== 'createdAt' && key !== 'updatedAt') {
-            setValue(key, sucursal[key])
-          }
-        })
+    const initializeForm = async () => {
+      if (isOpen) {
+        // 1️⃣ PRIMERO: Cargar managers (esperar a que termine)
+        await loadManagers()
         
-        if (sucursal.logoUrl) {
-          setLogoPreview(sucursal.logoUrl)
+        // 2️⃣ DESPUÉS: Llenar formulario (ahora los managers ya están)
+        if (mode === 'edit' && sucursal) {
+          // ✅ USAR RESET en lugar de setValue múltiples veces
+          // Esto garantiza que todos los valores se apliquen correctamente
+          const formData = {
+            name: sucursal.name || '',
+            address: sucursal.address || '',
+            phone: sucursal.phone || '',
+            email: sucursal.email || '',
+            description: sucursal.description || '',
+            capacity: sucursal.capacity || 50,
+            manager: sucursal.manager?._id || sucursal.manager || '',
+            schedule: sucursal.schedule || {
+              monday: { isOpen: true, openTime: '08:00', closeTime: '20:00' },
+              tuesday: { isOpen: true, openTime: '08:00', closeTime: '20:00' },
+              wednesday: { isOpen: true, openTime: '08:00', closeTime: '20:00' },
+              thursday: { isOpen: true, openTime: '08:00', closeTime: '20:00' },
+              friday: { isOpen: true, openTime: '08:00', closeTime: '20:00' },
+              saturday: { isOpen: true, openTime: '08:00', closeTime: '18:00' },
+              sunday: { isOpen: false, openTime: '10:00', closeTime: '16:00' }
+            },
+            settings: sucursal.settings || {
+              allowOnlinePayments: true,
+              requireParentApproval: true,
+              maxStudentsPerClass: 20,
+              monthlyFee: 500,
+              registrationFee: 200
+            }
+          }
+          
+          reset(formData)
+          
+          if (sucursal.logoUrl) {
+            setLogoPreview(sucursal.logoUrl)
+          }
+        } else {
+          // Resetear formulario para creación
+          reset()
+          setLogoFile(null)
+          setLogoPreview(null)
         }
-      } else {
-        // Resetear formulario para creación
-        reset()
-        setLogoFile(null)
-        setLogoPreview(null)
       }
     }
-  }, [isOpen, mode, sucursal, setValue, reset])
+
+    initializeForm()
+  }, [isOpen, mode, sucursal, reset])
 
   // Manejar subida de logo
   const handleLogoChange = (e) => {

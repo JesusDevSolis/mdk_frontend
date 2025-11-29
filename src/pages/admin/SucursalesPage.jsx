@@ -21,8 +21,15 @@ import SucursalForm from '../../components/forms/SucursalForm'
 import SucursalDetailsModal from '../../components/modals/SucursalDetailsModal'
 import toast from 'react-hot-toast'
 
+// ✅ NUEVO: Importar sistema de permisos
+import { usePermissions } from '../../hooks/usePermissions'
+import PermissionGuard from '../../components/auth/PermissionGuard'
+
 const SucursalesPage = () => {
   const { user } = useAuth()
+  // ✅ NUEVO: Hook de permisos
+  const { canCreate, canUpdate, canDelete } = usePermissions('sucursales')
+  
   const [sucursales, setSucursales] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -182,17 +189,20 @@ const SucursalesPage = () => {
                     Ver detalles
                   </button>
                   
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditModal(sucursal);
-                      setShowDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    Editar
-                  </button>
+                  {/* ✅ CORREGIDO: Botón Editar con permisos */}
+                  <PermissionGuard module="sucursales" action="update">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(sucursal);
+                        setShowDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 transition-colors"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Editar
+                    </button>
+                  </PermissionGuard>
                   
                   {user?.role === 'admin' && (
                     <>
@@ -343,11 +353,15 @@ const SucursalesPage = () => {
       ) : sucursales.length === 0 ? (
         <div className="text-center py-12">
           <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay sucursales</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {user?.role === 'instructor' ? 'No tienes sucursales asignadas' : 'No hay sucursales'}
+          </h3>
           <p className="text-gray-600 mb-6">
-            {searchTerm || filter !== 'all' 
-              ? 'No se encontraron sucursales con los filtros aplicados'
-              : 'Comienza creando tu primera sucursal'
+            {user?.role === 'instructor' 
+              ? 'Actualmente no tienes ninguna sucursal asignada. Contacta al administrador para que te asigne una sucursal.'
+              : searchTerm || filter !== 'all' 
+                ? 'No se encontraron sucursales con los filtros aplicados'
+                : 'Comienza creando tu primera sucursal'
             }
           </p>
           {user?.role === 'admin' && (
