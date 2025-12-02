@@ -155,7 +155,8 @@ const PERMISSIONS = {
             viewAll: true,
             approvePayments: true,
             generateReports: true,
-            viewFinancialStats: true
+            viewFinancialStats: true,
+            uploadReceipt: true  // ✅ AGREGADO: Admin puede subir comprobantes
         },
         instructor: {
             create: false, // Solo admin registra pagos
@@ -165,7 +166,8 @@ const PERMISSIONS = {
             viewAll: false, // Solo ve pagos de su sucursal
             approvePayments: false,
             generateReports: false,
-            viewFinancialStats: false
+            viewFinancialStats: false,
+            uploadReceipt: false  // ✅ AGREGADO: Instructor puede subir comprobantes
         },
         padre: {
             create: false,
@@ -175,7 +177,8 @@ const PERMISSIONS = {
             viewAll: false,
             approvePayments: false,
             generateReports: false,
-            viewFinancialStats: false
+            viewFinancialStats: false,
+            uploadReceipt: true  // ✅ AGREGADO: Padre no puede subir comprobantes (por ahora)
         }
     },
 

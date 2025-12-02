@@ -95,9 +95,11 @@ const PagosPage = () => {
   const loadSucursales = async () => {
     try {
       const response = await sucursalesAPI.getAll()
-      setSucursales(response.data)
+      // ✅ CORREGIDO: Backend devuelve { data: { sucursales: [...], pagination: {...} } }
+      setSucursales(response.data?.sucursales || [])
     } catch (error) {
       console.error('Error al cargar sucursales:', error)
+      setSucursales([]) // ✅ Garantizar array vacío en caso de error
     }
   }
 
@@ -129,7 +131,23 @@ const PagosPage = () => {
   const loadStats = async () => {
     try {
       const response = await pagosAPI.getStats()
-      setStats(response.data)
+      
+      // ✅ CORREGIDO: Transformar respuesta del backend
+      // Backend devuelve: { data: { general: { total, totalAmount, byStatus: {...} }, byType: [...], byMonth: [...] } }
+      const general = response.data?.general || {}
+      const byStatus = general.byStatus || {}
+      
+      // Transformar a la estructura que espera el frontend
+      setStats({
+        total: general.total || 0,
+        pagado: byStatus.pagado?.count || 0,
+        pendiente: byStatus.pendiente?.count || 0,
+        vencido: byStatus.vencido?.count || 0,
+        totalAmount: general.totalAmount || 0,
+        pagadoAmount: byStatus.pagado?.total || 0,
+        pendienteAmount: byStatus.pendiente?.total || 0,
+        vencidoAmount: byStatus.vencido?.total || 0
+      })
     } catch (error) {
       console.error('Error al cargar estadísticas:', error)
     }
@@ -854,6 +872,8 @@ const PagosPage = () => {
           isOpen={showDetails}
           onClose={() => setShowDetails(false)}
           pago={selectedPago}
+          onEdit={handleEdit}  // ✅ AGREGADO
+          onDelete={handleDelete}  // ✅ AGREGADO
         />
       )}
 

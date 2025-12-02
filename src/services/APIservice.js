@@ -420,6 +420,18 @@ export const pagosAPI = {
   getHistorialFinanciero: async (alumnoId) => {
     const response = await api.get(`/pagos/alumno/${alumnoId}/historial`)
     return response.data
+  },
+  
+  // ✅ NUEVO: Marcar pago como pagado
+  markAsPaid: async (id, paymentData) => {
+    const response = await api.put(`/pagos/${id}/marcar-pagado`, paymentData)
+    return response.data
+  },
+  
+  // ✅ NUEVO: Cancelar pago
+  cancelPayment: async (id, reason) => {
+    const response = await api.put(`/pagos/${id}/cancelar`, { reason })
+    return response.data
   }
 }
 
