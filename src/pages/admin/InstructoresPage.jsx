@@ -106,14 +106,25 @@ const InstructoresPage = () => {
     const loadInstructores = async () => {
         try {
         setLoading(true)
-        const params = new URLSearchParams()
+        
+        // ✅ CORREGIDO: Construir objeto en lugar de URLSearchParams
+        const params = {}
 
-        if (filters.sucursal) params.append('sucursal', filters.sucursal)
-        if (filters.status !== 'all') params.append('status', filters.status)
-        if (filters.belt) params.append('belt', filters.belt)
-        if (searchTerm) params.append('search', searchTerm)
+        if (filters.sucursal) params.sucursal = filters.sucursal
+        
+        // ✅ CORREGIDO: Transformar status a isActive para el backend
+        if (filters.status === 'active') {
+            params.isActive = 'true'
+        } else if (filters.status === 'inactive') {
+            params.isActive = 'false'
+        }
+        // Si es 'all', no enviamos el parámetro
+        
+        if (filters.belt) params.belt = filters.belt
+        if (searchTerm) params.search = searchTerm
 
-        const response = await instructoresAPI.getAll(params.toString())
+        // ✅ CORREGIDO: Pasar objeto directamente
+        const response = await instructoresAPI.getAll(params)
         
         if (response.success) {
             const instructoresData = response.data || []
