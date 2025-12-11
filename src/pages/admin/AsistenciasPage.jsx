@@ -61,6 +61,49 @@ const AsistenciasPage = () => {
         loadInitialData();
     }, []);
 
+    // ✅ NUEVO: Recargar horarios cuando cambian filtros de sucursal o instructor
+    useEffect(() => {
+        const recargarHorarios = async () => {
+            try {
+                const params = { estado: 'activo' };
+                
+                if (filters.sucursalId) {
+                    params.sucursal = filters.sucursalId;
+                }
+                
+                if (filters.instructorId) {
+                    params.instructor = filters.instructorId;
+                }
+                
+                const horariosData = await horariosAPI.getAll(params);
+                
+                let horariosArray = [];
+                if (Array.isArray(horariosData)) {
+                    horariosArray = horariosData;
+                } else if (Array.isArray(horariosData?.data)) {
+                    horariosArray = horariosData.data;
+                }
+                
+                setHorarios(horariosArray);
+                
+                // Si el horario actual no está en la nueva lista, limpiar selección
+                if (filters.horarioId && !horariosArray.find(h => h._id === filters.horarioId)) {
+                    setFilters(prev => ({
+                        ...prev,
+                        horarioId: horariosArray[0]?._id || ''
+                    }));
+                }
+            } catch (error) {
+                console.error('Error recargando horarios:', error);
+            }
+        };
+        
+        // Solo recargar si hay cambios en sucursal o instructor
+        if (filters.sucursalId || filters.instructorId) {
+            recargarHorarios();
+        }
+    }, [filters.sucursalId, filters.instructorId]);
+
     // Cargar alumnos cuando se selecciona un horario
     useEffect(() => {
         if (filters.horarioId && filters.fecha) {
