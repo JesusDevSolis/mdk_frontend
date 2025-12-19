@@ -28,9 +28,9 @@ import HorariosPage from './HorariosPage'
 import PagosPage from './PagosPage'
 import AsistenciasPage from './AsistenciasPage'
 import InstructoresPage from './InstructoresPage'
+import ExamenesPage from './ExamenesPage'
 
 // Componentes placeholder para otras páginas
-const CalificacionesPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Gestión de Calificaciones</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 const ConfiguracionPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Configuración</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
 
 const AdminDashboard = () => {
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
               <Route path="sucursales" element={<SucursalesPage />} />
               <Route path="horarios" element={<HorariosPage />} />
               <Route path="pagos" element={<PagosPage />} />
-              <Route path="calificaciones" element={<CalificacionesPage />} />
+              <Route path="calificaciones" element={<ExamenesPage />} />
               <Route path="asistencias" element={<AsistenciasPage />} />
               <Route path="instructores" element={<InstructoresPage />} />
               <Route path="configuracion" element={<ConfiguracionPage />} />

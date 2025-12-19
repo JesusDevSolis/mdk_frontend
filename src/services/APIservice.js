@@ -522,6 +522,106 @@ export const calificacionesAPI = {
   update: async (id, calificacionData) => {
     const response = await api.put(`/calificaciones/${id}`, calificacionData)
     return response.data
+  },
+
+  // Finalizar calificación
+  finalizar: async (id) => {
+    const response = await api.put(`/calificaciones/${id}/finalizar`)
+    return response.data
+  },
+
+  // Obtener calificaciones por examen
+  getByExamen: async (examenId) => {
+    const response = await api.get(`/calificaciones/examen/${examenId}`)
+    return response.data
+  },
+
+  // Obtener estadísticas de examen
+  getEstadisticasExamen: async (examenId) => {
+    const response = await api.get(`/calificaciones/estadisticas/${examenId}`)
+    return response.data
+  }
+}
+
+// ===== SERVICIOS DE GRADUACIONES =====
+export const graduacionesAPI = {
+  // Obtener todas las graduaciones
+  getAll: async (params = {}) => {
+    const response = await api.get('/graduaciones', { params })
+    return response.data
+  },
+  
+  // Obtener graduación por ID
+  getById: async (id) => {
+    const response = await api.get(`/graduaciones/${id}`)
+    return response.data
+  },
+  
+  // Crear graduación
+  create: async (graduacionData) => {
+    const response = await api.post('/graduaciones', graduacionData)
+    return response.data
+  },
+  
+  // Aprobar graduación
+  aprobar: async (id) => {
+    const response = await api.put(`/graduaciones/${id}/aprobar`)
+    return response.data
+  },
+  
+  // Subir certificado
+  uploadCertificado: async (id, certificadoFile) => {
+    const formData = new FormData()
+    formData.append('certificado', certificadoFile)
+    
+    const response = await api.post(`/graduaciones/${id}/certificado`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  },
+  
+  // Cancelar graduación
+  cancelar: async (id, motivo) => {
+    const response = await api.put(`/graduaciones/${id}/cancelar`, { motivo })
+    return response.data
+  },
+  
+  // Obtener historial de graduaciones de un alumno
+  getHistorialAlumno: async (alumnoId) => {
+    const response = await api.get(`/graduaciones/alumno/${alumnoId}`)
+    return response.data
+  },
+  
+  // Obtener graduaciones de un examen
+  getByExamen: async (examenId) => {
+    const response = await api.get(`/graduaciones/examen/${examenId}`)
+    return response.data
+  },
+  
+  // Obtener graduaciones pendientes de aprobación
+  getPendientes: async () => {
+    const response = await api.get('/graduaciones/pendientes')
+    return response.data
+  },
+  
+  // Obtener graduaciones sin certificado
+  getSinCertificado: async () => {
+    const response = await api.get('/graduaciones/sin-certificado')
+    return response.data
+  },
+  
+  // Registrar ceremonia
+  registrarCeremonia: async (id, ceremoniaData) => {
+    const response = await api.put(`/graduaciones/${id}/ceremonia`, ceremoniaData)
+    return response.data
+  },
+  
+  // Obtener estadísticas
+  getEstadisticas: async (params = {}) => {
+    const response = await api.get('/graduaciones/estadisticas', { params })
+    return response.data
   }
 }
 
@@ -740,6 +840,75 @@ export const notificacionesAPI = {
       mensaje,
       chatIds
     })
+    return response.data
+  }
+}
+
+// ===== SERVICIOS DE EXÁMENES =====
+export const examenesAPI = {
+  // Obtener todos los exámenes con filtros opcionales
+  getAll: async (params = {}) => {
+    const response = await api.get('/examenes', { params })
+    return response.data
+  },
+  
+  // Obtener examen por ID
+  getById: async (id) => {
+    const response = await api.get(`/examenes/${id}`)
+    return response.data
+  },
+  
+  // Crear examen
+  create: async (examenData) => {
+    const response = await api.post('/examenes', examenData)
+    return response.data
+  },
+  
+  // Actualizar examen
+  update: async (id, examenData) => {
+    const response = await api.put(`/examenes/${id}`, examenData)
+    return response.data
+  },
+  
+  // Eliminar examen (soft delete)
+  delete: async (id) => {
+    const response = await api.delete(`/examenes/${id}`)
+    return response.data
+  },
+  
+  // Inscribir alumno al examen
+  inscribirAlumno: async (examenId, inscripcionData) => {
+    const response = await api.post(`/examenes/${examenId}/inscribir`, inscripcionData)
+    return response.data
+  },
+  
+  // Desinscribir alumno del examen
+  desinscribirAlumno: async (examenId, alumnoId) => {
+    const response = await api.delete(`/examenes/${examenId}/alumnos/${alumnoId}`)
+    return response.data
+  },
+  
+  // Registrar pago de examen
+  registrarPago: async (examenId, pagoData) => {
+    const response = await api.post(`/examenes/${examenId}/pago`, pagoData)
+    return response.data
+  },
+  
+  // Obtener alumnos elegibles para el examen
+  getAlumnosElegibles: async (examenId) => {
+    const response = await api.get(`/examenes/${examenId}/alumnos-elegibles`)
+    return response.data
+  },
+  
+  // Cambiar estado del examen
+  cambiarEstado: async (examenId, estado) => {
+    const response = await api.put(`/examenes/${examenId}/estado`, { estado })
+    return response.data
+  },
+  
+  // Obtener estadísticas
+  getEstadisticas: async (params = {}) => {
+    const response = await api.get('/examenes/estadisticas', { params })
     return response.data
   }
 }
