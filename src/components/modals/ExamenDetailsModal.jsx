@@ -21,17 +21,24 @@ import {
 import { examenesAPI, utils } from '../../services/APIservice'
 import { usePermissions } from '../../hooks/usePermissions'
 import PermissionGuard from '../../components/auth/PermissionGuard'
+import CalificacionDetailModal from './CalificacionDetailModal'
 import toast from 'react-hot-toast'
 
-const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onInscribir, onCalificar }) => {
+const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onSuccess, onEdit, onInscribir, onCalificar }) => {
     const { canUpdate } = usePermissions('calificaciones')
     const [examen, setExamen] = useState(null)
     const [loading, setLoading] = useState(false)
     const [showEstadoMenu, setShowEstadoMenu] = useState(false)
+    const [calificaciones, setCalificaciones] = useState([])
+    const [estadisticasCalificaciones, setEstadisticasCalificaciones] = useState(null)
+    const [loadingCalificaciones, setLoadingCalificaciones] = useState(false)
+    const [showCalificacionDetail, setShowCalificacionDetail] = useState(false)
+    const [selectedCalificacion, setSelectedCalificacion] = useState(null)
 
     useEffect(() => {
         if (isOpen && examenProp) {
         loadExamenDetails()
+        loadCalificaciones()
         }
     }, [isOpen, examenProp])
 
@@ -51,6 +58,23 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onIns
         }
     }
 
+    const loadCalificaciones = async () => {
+        try {
+            setLoadingCalificaciones(true)
+            const response = await examenesAPI.getCalificacionesExamen(examenProp._id)
+            if (response.success) {
+                setCalificaciones(response.data.calificaciones || [])
+                setEstadisticasCalificaciones(response.data.estadisticas || null)
+            }
+        } catch (error) {
+            console.log('No hay calificaciones aún')
+            setCalificaciones([])
+            setEstadisticasCalificaciones(null)
+        } finally {
+            setLoadingCalificaciones(false)
+        }
+    }
+
     const handleCambiarEstado = async (nuevoEstado) => {
         if (!canUpdate) {
         toast.error('No tienes permiso para cambiar el estado')
@@ -63,6 +87,8 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onIns
             toast.success('Estado actualizado exitosamente')
             setShowEstadoMenu(false)
             loadExamenDetails()
+            // ✅ Notificar al componente padre para actualizar la lista
+            if (onSuccess) onSuccess()
         }
         } catch (error) {
         console.error('Error al cambiar estado:', error)
@@ -130,6 +156,7 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onIns
     const pagosStatus = getPagosStatus()
 
     return (
+        <>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
             {/* Header */}
@@ -390,6 +417,131 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onIns
                     <p className="text-sm text-gray-700">{examen.notas}</p>
                 </div>
                 )}
+
+                {/* Calificaciones */}
+                <div className="mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Award className="w-5 h-5 text-blue-600" />
+                        Calificaciones
+                    </h4>
+
+                    {loadingCalificaciones ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                    ) : calificaciones.length === 0 ? (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                            <Award className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                            <p className="text-gray-500">No hay calificaciones registradas aún</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Estadísticas */}
+                            {estadisticasCalificaciones && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                        <p className="text-xs text-gray-600 mb-1">Total</p>
+                                        <p className="text-2xl font-bold text-gray-900">{estadisticasCalificaciones.totalCalificaciones}</p>
+                                    </div>
+                                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                        <p className="text-xs text-green-700 mb-1">Aprobados</p>
+                                        <p className="text-2xl font-bold text-green-700">{estadisticasCalificaciones.aprobados}</p>
+                                    </div>
+                                    <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                                        <p className="text-xs text-red-700 mb-1">Reprobados</p>
+                                        <p className="text-2xl font-bold text-red-700">{estadisticasCalificaciones.reprobados}</p>
+                                    </div>
+                                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                                        <p className="text-xs text-blue-700 mb-1">Promedio</p>
+                                        <p className="text-2xl font-bold text-blue-700">{estadisticasCalificaciones.promedioGeneral.toFixed(1)}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tabla de Calificaciones */}
+                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Alumno
+                                                </th>
+                                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Calificación
+                                                </th>
+                                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Resultado
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Evaluado Por
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Fecha
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {calificaciones.map((calif) => (
+                                                <tr 
+                                                    key={calif._id} 
+                                                    onClick={() => {
+                                                        setSelectedCalificacion(calif)
+                                                        setShowCalificacionDetail(true)
+                                                    }}
+                                                    className="hover:bg-blue-50 cursor-pointer transition-colors"
+                                                >
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="flex items-center">
+                                                            <div>
+                                                                <div className="text-sm font-medium text-gray-900">
+                                                                    {calif.alumno?.firstName} {calif.alumno?.lastName}
+                                                                </div>
+                                                                <div className="text-xs text-gray-500 capitalize">
+                                                                    {calif.alumno?.belt?.level?.replace('-', ' ') || 'Sin cinturón'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                                        <span className={`text-lg font-bold ${
+                                                            calif.resultado === 'aprobado' 
+                                                                ? 'text-green-600' 
+                                                                : 'text-red-600'
+                                                        }`}>
+                                                            {calif.calificacionFinal?.toFixed(1)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                                                        {calif.resultado === 'aprobado' ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                Aprobado
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                <AlertTriangle className="w-3 h-3" />
+                                                                Reprobado
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {calif.evaluadoPor?.name || 'N/A'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                        {utils.formatDate(calif.fechaEvaluacion)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
             )}
 
@@ -489,6 +641,24 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onEdit, onIns
             </div>
         </div>
         </div>
+
+        {/* Modal de Detalle de Calificación */}
+        {showCalificacionDetail && selectedCalificacion && (
+            <CalificacionDetailModal
+                calificacion={selectedCalificacion}
+                examen={examen}
+                isOpen={showCalificacionDetail}
+                onClose={() => {
+                    setShowCalificacionDetail(false)
+                    setSelectedCalificacion(null)
+                }}
+                onSuccess={() => {
+                    loadCalificaciones()
+                    if (onSuccess) onSuccess()
+                }}
+            />
+        )}
+        </>
     )
 }
 

@@ -906,6 +906,24 @@ export const examenesAPI = {
     return response.data
   },
   
+  // Calificar alumno
+  calificarAlumno: async (examenId, calificacionData) => {
+    const response = await api.post(`/examenes/${examenId}/calificar`, calificacionData)
+    return response.data
+  },
+  
+  // Obtener calificación de un alumno en un examen
+  getCalificacionAlumno: async (examenId, alumnoId) => {
+    const response = await api.get(`/examenes/${examenId}/calificaciones/${alumnoId}`)
+    return response.data
+  },
+  
+  // Obtener todas las calificaciones de un examen
+  getCalificacionesExamen: async (examenId) => {
+    const response = await api.get(`/examenes/${examenId}/calificaciones`)
+    return response.data
+  },
+  
   // Obtener estadísticas
   getEstadisticas: async (params = {}) => {
     const response = await api.get('/examenes/estadisticas', { params })

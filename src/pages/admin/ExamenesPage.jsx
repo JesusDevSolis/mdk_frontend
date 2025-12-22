@@ -30,6 +30,7 @@ import PermissionGuard from '../../components/auth/PermissionGuard'
 import ExamenForm from '../../components/forms/ExamenForm'
 import ExamenDetailsModal from '../../components/modals/ExamenDetailsModal'
 import InscripcionForm from '../../components/forms/InscripcionForm'
+import CalificacionForm from '../../components/forms/CalificacionForm'
 
 import toast from 'react-hot-toast'
 
@@ -625,6 +626,7 @@ const ExamenesPage = () => {
                         setShowDetailsModal(false)
                         setSelectedExamen(null)
                     }}
+                    onSuccess={loadExamenes}
                     onEdit={(examen) => {
                         setSelectedExamen(examen)
                         setShowDetailsModal(false)
@@ -668,6 +670,19 @@ const ExamenesPage = () => {
                         }
                     }
                     }}
+                />
+            )}
+
+            {/* Modal Calificación */}
+            {showCalificacionModal && selectedExamen && (
+                <CalificacionForm
+                    examen={selectedExamen}
+                    isOpen={showCalificacionModal}
+                    onClose={() => {
+                        setShowCalificacionModal(false)
+                        setSelectedExamen(null)
+                    }}
+                    onSuccess={loadExamenes}
                 />
             )}
         </div>
