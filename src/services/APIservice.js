@@ -543,88 +543,6 @@ export const calificacionesAPI = {
   }
 }
 
-// ===== SERVICIOS DE GRADUACIONES =====
-export const graduacionesAPI = {
-  // Obtener todas las graduaciones
-  getAll: async (params = {}) => {
-    const response = await api.get('/graduaciones', { params })
-    return response.data
-  },
-  
-  // Obtener graduación por ID
-  getById: async (id) => {
-    const response = await api.get(`/graduaciones/${id}`)
-    return response.data
-  },
-  
-  // Crear graduación
-  create: async (graduacionData) => {
-    const response = await api.post('/graduaciones', graduacionData)
-    return response.data
-  },
-  
-  // Aprobar graduación
-  aprobar: async (id) => {
-    const response = await api.put(`/graduaciones/${id}/aprobar`)
-    return response.data
-  },
-  
-  // Subir certificado
-  uploadCertificado: async (id, certificadoFile) => {
-    const formData = new FormData()
-    formData.append('certificado', certificadoFile)
-    
-    const response = await api.post(`/graduaciones/${id}/certificado`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-    return response.data
-  },
-  
-  // Cancelar graduación
-  cancelar: async (id, motivo) => {
-    const response = await api.put(`/graduaciones/${id}/cancelar`, { motivo })
-    return response.data
-  },
-  
-  // Obtener historial de graduaciones de un alumno
-  getHistorialAlumno: async (alumnoId) => {
-    const response = await api.get(`/graduaciones/alumno/${alumnoId}`)
-    return response.data
-  },
-  
-  // Obtener graduaciones de un examen
-  getByExamen: async (examenId) => {
-    const response = await api.get(`/graduaciones/examen/${examenId}`)
-    return response.data
-  },
-  
-  // Obtener graduaciones pendientes de aprobación
-  getPendientes: async () => {
-    const response = await api.get('/graduaciones/pendientes')
-    return response.data
-  },
-  
-  // Obtener graduaciones sin certificado
-  getSinCertificado: async () => {
-    const response = await api.get('/graduaciones/sin-certificado')
-    return response.data
-  },
-  
-  // Registrar ceremonia
-  registrarCeremonia: async (id, ceremoniaData) => {
-    const response = await api.put(`/graduaciones/${id}/ceremonia`, ceremoniaData)
-    return response.data
-  },
-  
-  // Obtener estadísticas
-  getEstadisticas: async (params = {}) => {
-    const response = await api.get('/graduaciones/estadisticas', { params })
-    return response.data
-  }
-}
-
 // Servicios de instructores
 export const instructoresAPI = {
   // Obtener todos los instructores con filtros opcionales
@@ -927,6 +845,39 @@ export const examenesAPI = {
   // Obtener estadísticas
   getEstadisticas: async (params = {}) => {
     const response = await api.get('/examenes/estadisticas', { params })
+    return response.data
+  }
+}
+
+// ===== GRADUACIONES API =====
+export const graduacionesAPI = {
+  // Procesar graduaciones masivas
+  procesarGraduaciones: async (graduacionData) => {
+    const response = await api.post('/graduaciones/procesar', graduacionData)
+    return response.data
+  },
+
+  // Obtener todas las graduaciones
+  getAll: async (params = {}) => {
+    const response = await api.get('/graduaciones', { params })
+    return response.data
+  },
+
+  // Obtener graduaciones por examen
+  getByExamen: async (examenId) => {
+    const response = await api.get(`/graduaciones/examen/${examenId}`)
+    return response.data
+  },
+
+  // Obtener graduaciones por alumno
+  getByAlumno: async (alumnoId) => {
+    const response = await api.get(`/graduaciones/alumno/${alumnoId}`)
+    return response.data
+  },
+
+  // Obtener estadísticas
+  getEstadisticas: async (params = {}) => {
+    const response = await api.get('/graduaciones/estadisticas', { params })
     return response.data
   }
 }

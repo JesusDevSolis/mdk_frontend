@@ -31,6 +31,7 @@ import ExamenForm from '../../components/forms/ExamenForm'
 import ExamenDetailsModal from '../../components/modals/ExamenDetailsModal'
 import InscripcionForm from '../../components/forms/InscripcionForm'
 import CalificacionForm from '../../components/forms/CalificacionForm'
+import GraduacionModal from '../../components/modals/GraduacionModal'
 
 import toast from 'react-hot-toast'
 
@@ -67,6 +68,7 @@ const ExamenesPage = () => {
 
     const [showInscripcionModal, setShowInscripcionModal] = useState(false)
     const [showCalificacionModal, setShowCalificacionModal] = useState(false)
+    const [showGraduacionModal, setShowGraduacionModal] = useState(false)
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -642,6 +644,11 @@ const ExamenesPage = () => {
                         setShowDetailsModal(false)
                         setShowCalificacionModal(true)
                     }}
+                    onGraduar={(examen) => {
+                        setSelectedExamen(examen)
+                        setShowDetailsModal(false)
+                        setShowGraduacionModal(true)
+                    }}
                 />
             )}
 
@@ -680,6 +687,19 @@ const ExamenesPage = () => {
                     isOpen={showCalificacionModal}
                     onClose={() => {
                         setShowCalificacionModal(false)
+                        setSelectedExamen(null)
+                    }}
+                    onSuccess={loadExamenes}
+                />
+            )}
+
+            {/* Modal Graduación */}
+            {showGraduacionModal && selectedExamen && (
+                <GraduacionModal
+                    examen={selectedExamen}
+                    isOpen={showGraduacionModal}
+                    onClose={() => {
+                        setShowGraduacionModal(false)
                         setSelectedExamen(null)
                     }}
                     onSuccess={loadExamenes}

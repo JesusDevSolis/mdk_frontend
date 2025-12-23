@@ -24,7 +24,7 @@ import PermissionGuard from '../../components/auth/PermissionGuard'
 import CalificacionDetailModal from './CalificacionDetailModal'
 import toast from 'react-hot-toast'
 
-const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onSuccess, onEdit, onInscribir, onCalificar }) => {
+const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onSuccess, onEdit, onInscribir, onCalificar, onGraduar }) => {
     const { canUpdate } = usePermissions('calificaciones')
     const [examen, setExamen] = useState(null)
     const [loading, setLoading] = useState(false)
@@ -588,6 +588,18 @@ const ExamenDetailsModal = ({ examen: examenProp, isOpen, onClose, onSuccess, on
                     >
                         <CheckCircle2 className="w-4 h-4" />
                         Calificar
+                    </button>
+                    </PermissionGuard>
+                )}
+
+                {examen.estado === 'completado' && calificaciones.length > 0 && (
+                    <PermissionGuard module="calificaciones" action="create">
+                    <button
+                        onClick={() => onGraduar && onGraduar(examen)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <Award className="w-4 h-4" />
+                        Graduar
                     </button>
                     </PermissionGuard>
                 )}
