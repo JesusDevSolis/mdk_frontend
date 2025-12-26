@@ -29,9 +29,7 @@ import PagosPage from './PagosPage'
 import AsistenciasPage from './AsistenciasPage'
 import InstructoresPage from './InstructoresPage'
 import ExamenesPage from './ExamenesPage'
-
-// Componentes placeholder para otras páginas
-const ConfiguracionPage = () => <div className="p-6"><h1 className="text-2xl font-bold">Configuración</h1><p className="text-gray-600 mt-2">Página en desarrollo...</p></div>
+import ConfiguracionPage from './ConfiguracionPage'
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)

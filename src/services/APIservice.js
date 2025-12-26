@@ -329,6 +329,18 @@ export const alumnosAPI = {
 
 // ===== SERVICIOS DE PAGOS =====
 export const pagosAPI = {
+  // ✅ NUEVO: Obtener configuraciones de pagos
+  getConfiguraciones: async () => {
+    const response = await api.get('/pagos/configuraciones')
+    return response.data
+  },
+
+  // ✅ NUEVO: Calcular recargo para un pago
+  calcularRecargo: async (id) => {
+    const response = await api.get(`/pagos/${id}/calcular-recargo`)
+    return response.data
+  },
+
   // Obtener todos los pagos
   getAll: async (params = {}) => {
     const response = await api.get('/pagos', { params })
@@ -390,9 +402,13 @@ export const pagosAPI = {
   
   // Obtener pagos pendientes
   getPendientes: async (params = {}) => {
-    const response = await api.get('/pagos', {
-      params: { status: 'pendiente', ...params }
-    })
+    const response = await api.get('/pagos/pendientes', { params })
+    return response.data
+  },
+  
+  // Obtener pagos vencidos
+  getVencidos: async (params = {}) => {
+    const response = await api.get('/pagos/vencidos', { params })
     return response.data
   },
   
@@ -422,13 +438,13 @@ export const pagosAPI = {
     return response.data
   },
   
-  // ✅ NUEVO: Marcar pago como pagado
+  // Marcar pago como pagado (✅ ACTUALIZADO: ahora soporta aplicarRecargo)
   markAsPaid: async (id, paymentData) => {
     const response = await api.put(`/pagos/${id}/marcar-pagado`, paymentData)
     return response.data
   },
   
-  // ✅ NUEVO: Cancelar pago
+  // Cancelar pago
   cancelPayment: async (id, reason) => {
     const response = await api.put(`/pagos/${id}/cancelar`, { reason })
     return response.data
@@ -437,6 +453,12 @@ export const pagosAPI = {
 
 // ===== SERVICIOS DE ASISTENCIAS =====
 export const asistenciasAPI = {
+  // ✅ NUEVO: Obtener configuraciones de asistencias
+  getConfiguraciones: async () => {
+    const response = await api.get('/asistencias/configuraciones')
+    return response.data
+  },
+
   // Obtener todas las asistencias con filtros opcionales
   getAll: async (params = {}) => {
     const response = await api.get('/asistencias', { params })
@@ -764,6 +786,12 @@ export const notificacionesAPI = {
 
 // ===== SERVICIOS DE EXÁMENES =====
 export const examenesAPI = {
+  // ✅ NUEVO: Obtener configuraciones de exámenes
+  getConfiguraciones: async () => {
+    const response = await api.get('/examenes/configuraciones')
+    return response.data
+  },
+
   // Obtener todos los exámenes con filtros opcionales
   getAll: async (params = {}) => {
     const response = await api.get('/examenes', { params })
@@ -973,6 +1001,105 @@ export const ASISTENCIA_ESTADOS_COLORS = {
     border: 'border-blue-500',
     text: 'text-blue-800',
     badge: 'bg-blue-500'
+  }
+}
+
+// ============================================
+// SERVICIOS DE CONFIGURACIÓN
+
+export const configuracionesAPI = {
+  // Obtener todas las configuraciones
+  getAll: async (params = {}) => {
+    const response = await api.get('/configuraciones', { params })
+    return response.data
+  },
+
+  // Obtener configuraciones agrupadas por categoría
+  getAgrupadas: async (soloPublicas = false) => {
+    const response = await api.get('/configuraciones/agrupadas', {
+      params: { soloPublicas }
+    })
+    return response.data
+  },
+
+  // Obtener configuración por ID
+  getById: async (id) => {
+    const response = await api.get(`/configuraciones/${id}`)
+    return response.data
+  },
+
+  // Obtener configuración por clave
+  getByClave: async (clave) => {
+    const response = await api.get(`/configuraciones/clave/${clave}`)
+    return response.data
+  },
+
+  // Obtener configuraciones por categoría
+  getPorCategoria: async (categoria, soloPublicas = false) => {
+    const response = await api.get(`/configuraciones/categoria/${categoria}`, {
+      params: { soloPublicas }
+    })
+    return response.data
+  },
+
+  // Crear nueva configuración
+  create: async (configuracionData) => {
+    const response = await api.post('/configuraciones', configuracionData)
+    return response.data
+  },
+
+  // Actualizar configuración
+  update: async (id, configuracionData) => {
+    const response = await api.put(`/configuraciones/${id}`, configuracionData)
+    return response.data
+  },
+
+  // Actualizar valor por clave
+  updateValorByClave: async (clave, valor) => {
+    const response = await api.put(`/configuraciones/clave/${clave}`, { valor })
+    return response.data
+  },
+
+  // Actualizar múltiples configuraciones
+  updateMultiple: async (configuraciones) => {
+    const response = await api.put('/configuraciones/multiple', { configuraciones })
+    return response.data
+  },
+
+  // Eliminar configuración
+  delete: async (id) => {
+    const response = await api.delete(`/configuraciones/${id}`)
+    return response.data
+  },
+
+  // Restaurar configuración a valor por defecto
+  restaurarDefecto: async (id) => {
+    const response = await api.put(`/configuraciones/${id}/restaurar`)
+    return response.data
+  },
+
+  // Restaurar categoría completa a valores por defecto
+  restaurarCategoria: async (categoria) => {
+    const response = await api.put(`/configuraciones/categoria/${categoria}/restaurar`)
+    return response.data
+  },
+
+  // Inicializar configuraciones por defecto
+  inicializar: async () => {
+    const response = await api.post('/configuraciones/inicializar')
+    return response.data
+  },
+
+  // Obtener estadísticas
+  getEstadisticas: async () => {
+    const response = await api.get('/configuraciones/estadisticas')
+    return response.data
+  },
+
+  // Exportar configuraciones
+  exportar: async () => {
+    const response = await api.get('/configuraciones/exportar')
+    return response.data
   }
 }
 
