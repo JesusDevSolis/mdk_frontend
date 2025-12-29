@@ -17,7 +17,9 @@ import {
   Calendar,
   Upload,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ClipboardCheck, 
+  CheckCircle2,
 } from 'lucide-react'
 import { pagosAPI, alumnosAPI, sucursalesAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
@@ -82,11 +84,19 @@ const PagosPage = () => {
   // Cargar sucursales para filtros
   const [sucursales, setSucursales] = useState([])
 
+  // ✅ NUEVO: Estado para configuraciones de pagos
+  const [configuraciones, setConfiguraciones] = useState({
+      diasGracia: 5,
+      recargoTardio: 10,
+      requiereComprobante: false
+  })
+
   // ===== EFECTOS =====
 
   useEffect(() => {
     loadSucursales()
     loadPagos()
+    loadConfiguraciones()
     loadStats()
   }, [pagination.page, filters, searchTerm])
 
@@ -126,6 +136,18 @@ const PagosPage = () => {
     } finally {
       setLoading(false)
     }
+  }
+  
+  // ✅ NUEVO: Cargar configuraciones
+  const loadConfiguraciones = async () => {
+      try {
+          const response = await pagosAPI.getConfiguraciones()
+          if (response.success) {
+              setConfiguraciones(response.data)
+          }
+      } catch (error) {
+          console.warn('No se pudieron cargar configuraciones, usando valores por defecto')
+      }
   }
 
   const loadStats = async () => {
@@ -322,6 +344,26 @@ const PagosPage = () => {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  // ✅ NUEVO: Calcular recargo para mostrar en la UI
+  const calcularRecargoVisual = (pago) => {
+      if (pago.status !== 'vencido' && pago.status !== 'pendiente') return null
+      
+      const hoy = new Date()
+      const fechaVencimiento = new Date(pago.dueDate)
+      const diasRetraso = Math.floor((hoy - fechaVencimiento) / (1000 * 60 * 60 * 24))
+      
+      if (diasRetraso <= configuraciones.diasGracia) return null
+      
+      const montoRecargo = (pago.amount * configuraciones.recargoTardio) / 100
+      
+      return {
+          diasRetraso,
+          porcentaje: configuraciones.recargoTardio,
+          monto: montoRecargo,
+          totalConRecargo: pago.amount + montoRecargo
+      }
   }
 
   // ===== RENDER =====
@@ -530,6 +572,40 @@ const PagosPage = () => {
         )}
       </div>
 
+      {/* ✅ NUEVO: Información de Configuraciones de Pagos */}
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-amber-600" />
+                  <h3 className="font-semibold text-gray-900">Política de Recargos</h3>
+              </div>
+              <div className="flex gap-6 text-sm">
+                  <div>
+                      <span className="text-gray-600">Días de gracia:</span>
+                      <span className="ml-2 font-semibold text-amber-600">
+                          {configuraciones.diasGracia} días
+                      </span>
+                  </div>
+                  <div>
+                      <span className="text-gray-600">Recargo por mora:</span>
+                      <span className="ml-2 font-semibold text-amber-600">
+                          {configuraciones.recargoTardio}%
+                      </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      {configuraciones.requiereComprobante ? (
+                          <>
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              <span className="text-sm text-gray-700">Comprobante requerido</span>
+                          </>
+                      ) : (
+                          <span className="text-sm text-gray-500">Comprobante opcional</span>
+                      )}
+                  </div>
+              </div>
+          </div>
+      </div>
+
       {/* Tabla de Pagos */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
@@ -597,15 +673,27 @@ const PagosPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getTypeBadge(pago.type)}
                       </td>
+                      {/* Columna de Monto con Recargo */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(pago.total)}
-                        </div>
-                        {pago.discount > 0 && (
-                          <div className="text-xs text-gray-500">
-                            Desc: {formatCurrency(pago.discount)}
+                          <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                  ${pago.amount.toFixed(2)}
+                              </div>
+                              {(() => {
+                                  const recargo = calcularRecargoVisual(pago)
+                                  if (recargo) {
+                                      return (
+                                          <div className="text-xs text-red-600 font-semibold">
+                                              +${recargo.monto.toFixed(2)} recargo
+                                              <div className="text-gray-500">
+                                                  Total: ${recargo.totalConRecargo.toFixed(2)}
+                                              </div>
+                                          </div>
+                                      )
+                                  }
+                                  return null
+                              })()}
                           </div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(pago.dueDate)}
@@ -864,6 +952,7 @@ const PagosPage = () => {
           onSuccess={handleFormSuccess}
           pago={selectedPago}
           mode={formMode}
+          configuraciones={configuraciones}
         />
       )}
 
@@ -874,6 +963,7 @@ const PagosPage = () => {
           pago={selectedPago}
           onEdit={handleEdit}  // ✅ AGREGADO
           onDelete={handleDelete}  // ✅ AGREGADO
+          configuraciones={configuraciones}
         />
       )}
 

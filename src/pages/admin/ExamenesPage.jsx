@@ -70,6 +70,14 @@ const ExamenesPage = () => {
     const [showCalificacionModal, setShowCalificacionModal] = useState(false)
     const [showGraduacionModal, setShowGraduacionModal] = useState(false)
 
+    // ✅ NUEVO: Estado para configuraciones de exámenes
+    const [configuraciones, setConfiguraciones] = useState({
+        calificacionMinima: 60,
+        asistenciaMinima: 75,
+        diasMinimosCinturon: 90,
+        costoBase: 500
+    })
+
     // Cargar datos iniciales
     useEffect(() => {
         loadInitialData()
@@ -94,6 +102,15 @@ const ExamenesPage = () => {
             const examenesData = examenesResponse.data || []
             setExamenes(examenesData)
             setSucursales(sucursalesResponse.data || [])
+            // ✅ NUEVO: Cargar configuraciones
+            try {
+                const configResponse = await examenesAPI.getConfiguraciones()
+                if (configResponse.success) {
+                    setConfiguraciones(configResponse.data)
+                }
+            } catch (error) {
+                console.warn('No se pudieron cargar configuraciones, usando valores por defecto')
+            }
             calculateStats(examenesData)
 
         } catch (error) {
@@ -326,6 +343,42 @@ const ExamenesPage = () => {
                     <Users className="w-6 h-6 text-purple-600" />
                     </div>
                 </div>
+                </div>
+            </div>
+
+            {/* ✅ NUEVO: Información de Configuraciones */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <ClipboardCheck className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-gray-900">Requisitos de Exámenes</h3>
+                    </div>
+                    <div className="flex gap-6 text-sm">
+                        <div>
+                            <span className="text-gray-600">Calificación mínima:</span>
+                            <span className="ml-2 font-semibold text-blue-600">
+                                {configuraciones.calificacionMinima}%
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Asistencia mínima:</span>
+                            <span className="ml-2 font-semibold text-blue-600">
+                                {configuraciones.asistenciaMinima}%
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Días con cinturón:</span>
+                            <span className="ml-2 font-semibold text-blue-600">
+                                {configuraciones.diasMinimosCinturon} días
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Costo base:</span>
+                            <span className="ml-2 font-semibold text-blue-600">
+                                ${configuraciones.costoBase}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -616,6 +669,7 @@ const ExamenesPage = () => {
                         setSelectedExamen(null)
                     }}
                     onSuccess={loadExamenes}
+                    configuraciones={configuraciones}
                     mode={selectedExamen ? 'edit' : 'create'}
                 />
             )}
@@ -677,6 +731,7 @@ const ExamenesPage = () => {
                         }
                     }
                     }}
+                    configuraciones={configuraciones}
                 />
             )}
 
@@ -690,6 +745,7 @@ const ExamenesPage = () => {
                         setSelectedExamen(null)
                     }}
                     onSuccess={loadExamenes}
+                    configuraciones={configuraciones}
                 />
             )}
 

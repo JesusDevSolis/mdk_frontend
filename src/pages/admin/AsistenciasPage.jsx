@@ -56,9 +56,17 @@ const AsistenciasPage = () => {
     const [selectedAlumno, setSelectedAlumno] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
+    // ✅ NUEVO: Estado para configuraciones de asistencias
+    const [configuraciones, setConfiguraciones] = useState({
+        toleranciaRetardo: 15,
+        diasJustificar: 3,
+        requiereJustificante: false
+    })
+
     // Cargar datos iniciales
     useEffect(() => {
         loadInitialData();
+        loadConfiguraciones()
     }, []);
 
     // ✅ NUEVO: Recargar horarios cuando cambian filtros de sucursal o instructor
@@ -403,13 +411,20 @@ const AsistenciasPage = () => {
         setSuccessMessage('');
 
         try {
+        // ✅ NUEVO: Obtener hora actual de México para horaRegistro
+        const now = new Date();
+        const mexicoTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Mexico_City"}));
+        const horaRegistroActual = mexicoTime.getHours().toString().padStart(2, '0') + ':' + 
+                                   mexicoTime.getMinutes().toString().padStart(2, '0');
+
         // ✅ CORRECCIÓN: Preparar datos para enviar usando alumnoId (no alumno)
         const asistenciasParaGuardar = alumnosInscritos.map(inscripcion => {
             const alumnoId = inscripcion.alumno._id;
             return {
                 alumnoId: alumnoId,  // ✅ El backend espera "alumnoId", no "alumno"
                 estado: asistenciasTemp[alumnoId].estado,
-                notas: asistenciasTemp[alumnoId].notas || ''
+                notas: asistenciasTemp[alumnoId].notas || '',
+                horaRegistro: horaRegistroActual  // ✅ NUEVO: Agregar hora de registro
             };
         });
 
@@ -534,6 +549,41 @@ const AsistenciasPage = () => {
             <LoadingSpinner />
         </div>
         );
+    }
+
+    // ✅ NUEVO: Cargar configuraciones
+    const loadConfiguraciones = async () => {
+        try {
+            const response = await asistenciasAPI.getConfiguraciones()
+            if (response.success) {
+                setConfiguraciones(response.data)
+            }
+        } catch (error) {
+            console.warn('No se pudieron cargar configuraciones, usando valores por defecto')
+        }
+    }
+
+    // ✅ NUEVO: Determinar estado basado en hora de llegada
+    const determinarEstadoAutomatico = (horaRegistro, horaInicioClase) => {
+        if (!horaRegistro || !horaInicioClase) return null
+        
+        // Convertir horas a minutos
+        const [horaR, minR] = horaRegistro.split(':').map(Number)
+        const [horaI, minI] = horaInicioClase.split(':').map(Number)
+        
+        const minutosRegistro = horaR * 60 + minR
+        const minutosInicio = horaI * 60 + minI
+        
+        const diferencia = minutosRegistro - minutosInicio
+        
+        // Determinar estado
+        if (diferencia <= 0) {
+            return 'presente' // Llegó a tiempo o antes
+        } else if (diferencia <= configuraciones.toleranciaRetardo) {
+            return 'retardo' // Dentro de tolerancia
+        } else {
+            return 'ausente' // Fuera de tolerancia
+        }
     }
 
     return (
@@ -801,6 +851,36 @@ const AsistenciasPage = () => {
                 </div>
             </div>
 
+            {/* ✅ NUEVO: Información de Configuraciones de Asistencias */}
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-green-600" />
+                        <h3 className="font-semibold text-gray-900">Política de Asistencias</h3>
+                    </div>
+                    <div className="flex gap-6 text-sm">
+                        <div>
+                            <span className="text-gray-600">Tolerancia de retardo:</span>
+                            <span className="ml-2 font-semibold text-green-600">
+                                {configuraciones.toleranciaRetardo} minutos
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Días para justificar:</span>
+                            <span className="ml-2 font-semibold text-green-600">
+                                {configuraciones.diasJustificar} días
+                            </span>
+                        </div>
+                        {configuraciones.requiereJustificante && (
+                            <div className="flex items-center gap-2 text-amber-600">
+                                <AlertCircle className="w-4 h-4" />
+                                <span className="text-sm font-medium">Justificante requerido</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Lista de Alumnos */}
             {alumnosInscritos.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -965,8 +1045,10 @@ const AsistenciasPage = () => {
         {/* Modal de Detalles */}
         {showModal && selectedAlumno && (
             <AsistenciaModal
-            alumno={selectedAlumno}
-            onClose={handleCloseModal}
+                alumno={selectedAlumno}
+                onClose={handleCloseModal}
+                configuraciones={configuraciones}
+                onEstadoAutomatico={determinarEstadoAutomatico}
             />
         )}
         </div>
