@@ -18,7 +18,8 @@ import {
   SlidersHorizontal,
   Building2,
   UserCheck,
-  Trash2
+  Trash2,
+  Dumbbell
 } from 'lucide-react'
 import { alumnosAPI, sucursalesAPI, utils } from '../../services/APIservice'
 import { useAuth } from '../../context/Authcontext'
@@ -31,6 +32,25 @@ import PermissionGuard from '../../components/auth/PermissionGuard'
 import AlumnoForm from '../../components/forms/AlumnoForm'
 import AlumnoDetailsModal from '../../components/modals/AlumnoDetailsModal'
 import toast from 'react-hot-toast'
+
+// ── Opciones de disciplina/programa ──────────────────────────────────────────
+const PROGRAMA_OPTIONS = [
+  { value: '',                 label: 'Todos',            emoji: '🥋', color: 'gray'   },
+  { value: 'tae-kwon-do',     label: 'Tae Kwon Do',      emoji: '🦶', color: 'blue'   },
+  { value: 'tang-soo-do',     label: 'Tang Soo Do',      emoji: '✋', color: 'red'    },
+  { value: 'hapkido',         label: 'Hapkido',          emoji: '🌀', color: 'purple' },
+  { value: 'gumdo',           label: 'Gumdo',            emoji: '⚔️', color: 'yellow' },
+  { value: 'pequenos-dragones', label: 'Pequeños Dragones', emoji: '🐉', color: 'green'  },
+]
+
+// Colores por disciplina para pills y badges
+const PROGRAMA_COLORS = {
+  'tae-kwon-do':      { bg: 'bg-blue-100',   text: 'text-blue-800',   border: 'border-blue-300',   ring: 'ring-blue-200',   activeBg: 'bg-blue-600'   },
+  'tang-soo-do':      { bg: 'bg-red-100',    text: 'text-red-800',    border: 'border-red-300',    ring: 'ring-red-200',    activeBg: 'bg-red-600'    },
+  'hapkido':          { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300', ring: 'ring-purple-200', activeBg: 'bg-purple-600' },
+  'gumdo':            { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', ring: 'ring-yellow-200', activeBg: 'bg-yellow-500' },
+  'pequenos-dragones':{ bg: 'bg-green-100',  text: 'text-green-800',  border: 'border-green-300',  ring: 'ring-green-200',  activeBg: 'bg-green-600'  },
+}
 
 const AlumnosPage = () => {
   // Hook de permisos
@@ -62,7 +82,8 @@ const AlumnosPage = () => {
     belt: '',
     age: '',
     tutor: '',
-    gender: ''
+    gender: '',
+    programa: ''
   })
 
   // Función para calcular edad (del archivo original)
@@ -135,6 +156,7 @@ const AlumnosPage = () => {
       if (filters.age) params.age = filters.age
       if (filters.tutor) params.tutor = filters.tutor
       if (filters.gender) params.gender = filters.gender
+      if (filters.programa) params.programa = filters.programa
       
       // Pasar objeto de parámetros (no string)
       const response = await alumnosAPI.getAll(params)
@@ -209,7 +231,8 @@ const AlumnosPage = () => {
       belt: '',
       age: '',
       tutor: '',
-      gender: ''
+      gender: '',
+      programa: ''
     })
     setSearchTerm('')
     setShowAdvancedFilters(false)
@@ -217,19 +240,19 @@ const AlumnosPage = () => {
 
   // Manejadores para filtros desde tarjetas
   const handleCardFilter = (filterType) => {
-    setSearchTerm('') // Limpiar búsqueda
-    setShowAdvancedFilters(false) // Cerrar filtros avanzados
+    setSearchTerm('')
+    setShowAdvancedFilters(false)
     
     switch(filterType) {
       case 'all':
-        // Limpiar todos los filtros
         setFilters({
           sucursal: '',
           status: 'all',
           belt: '',
           age: '',
           tutor: '',
-          gender: ''
+          gender: '',
+          programa: ''
         })
         break
       case 'activos':
@@ -239,7 +262,8 @@ const AlumnosPage = () => {
           belt: '',
           age: '',
           tutor: '',
-          gender: ''
+          gender: '',
+          programa: ''
         })
         break
       case 'menores':
@@ -249,7 +273,8 @@ const AlumnosPage = () => {
           belt: '',
           age: '0-17',
           tutor: '',
-          gender: ''
+          gender: '',
+          programa: ''
         })
         break
       case 'adultos':
@@ -259,7 +284,8 @@ const AlumnosPage = () => {
           belt: '',
           age: '18-100',
           tutor: '',
-          gender: ''
+          gender: '',
+          programa: ''
         })
         break
       default:
@@ -269,7 +295,9 @@ const AlumnosPage = () => {
 
   // Función para contar filtros activos
   const getActiveFiltersCount = () => {
-    return Object.values(filters).filter(value => value && value !== 'all').length
+    return Object.entries(filters)
+      .filter(([key, value]) => value && value !== 'all')
+      .length
   }
 
   const AlumnoCard = ({ alumno }) => {
@@ -380,6 +408,20 @@ const AlumnosPage = () => {
 
           {/* Detalles */}
           <div className="space-y-2 text-sm text-gray-600">
+            {/* Disciplina/Programa */}
+            {alumno.enrollment?.programa && (() => {
+              const prog = PROGRAMA_OPTIONS.find(p => p.value === alumno.enrollment.programa)
+              const colors = PROGRAMA_COLORS[alumno.enrollment.programa]
+              return prog ? (
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="w-4 h-4 text-gray-400" />
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors?.bg || 'bg-gray-100'} ${colors?.text || 'text-gray-700'}`}>
+                    {prog.emoji} {prog.label}
+                  </span>
+                </div>
+              ) : null
+            })()}
+
             {/* ID de estudiante */}
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-400" />
@@ -527,6 +569,54 @@ const AlumnosPage = () => {
           </div>
           {filters.age === '18-100' && filters.status === 'all' && (
             <p className="text-xs text-purple-600 mt-2 font-medium">✓ Filtro activo</p>
+          )}
+        </div>
+      </div>
+
+      {/* FILTRO POR DISCIPLINA — Pills interactivas */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-600 shrink-0">
+            <Dumbbell className="w-4 h-4" />
+            <span>Disciplina:</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {PROGRAMA_OPTIONS.map((prog) => {
+              const isActive = filters.programa === prog.value
+              const colors = prog.value ? PROGRAMA_COLORS[prog.value] : null
+
+              return (
+                <button
+                  key={prog.value}
+                  onClick={() => updateFilter('programa', prog.value)}
+                  className={`
+                    inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+                    border transition-all duration-150
+                    ${isActive
+                      ? prog.value
+                        ? `${colors.activeBg} text-white border-transparent shadow-sm`
+                        : 'bg-gray-800 text-white border-transparent shadow-sm'
+                      : prog.value
+                        ? `${colors.bg} ${colors.text} ${colors.border} hover:shadow-sm`
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                    }
+                  `}
+                >
+                  <span>{prog.emoji}</span>
+                  <span>{prog.label}</span>
+                  {isActive && prog.value && (
+                    <X className="w-3 h-3 ml-0.5 opacity-80" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Contador de resultados cuando hay filtro activo */}
+          {filters.programa && (
+            <span className="ml-auto text-xs text-gray-500 shrink-0">
+              {alumnos.length} resultado{alumnos.length !== 1 ? 's' : ''}
+            </span>
           )}
         </div>
       </div>
