@@ -20,7 +20,7 @@ import {
     UserPlus
 } from 'lucide-react'
 import { examenesAPI, sucursalesAPI, utils } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 
 // Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'

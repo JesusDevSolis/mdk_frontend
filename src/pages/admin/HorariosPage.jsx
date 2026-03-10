@@ -23,7 +23,7 @@ import {
     TrendingUp
 } from 'lucide-react'
 import { horariosAPI, sucursalesAPI, instructoresAPI } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 
 // ✅ NUEVO: Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'

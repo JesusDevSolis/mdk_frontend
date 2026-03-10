@@ -11,7 +11,7 @@ import {
     Users
 } from 'lucide-react'
 import { examenesAPI, utils } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
 const CalificacionForm = ({ examen, isOpen, onClose, onSuccess }) => {

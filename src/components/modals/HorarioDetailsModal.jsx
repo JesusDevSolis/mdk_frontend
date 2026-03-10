@@ -23,7 +23,7 @@ import {
     TrendingUp
 } from 'lucide-react'
 import { horariosAPI, alumnosAPI } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
 // ✅ NUEVO: Importar sistema de permisos

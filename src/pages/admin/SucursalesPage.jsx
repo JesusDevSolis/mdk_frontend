@@ -15,7 +15,7 @@ import {
   Eye,
   Upload
 } from 'lucide-react'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import { sucursalesAPI } from '../../services/APIservice'
 import SucursalForm from '../../components/forms/SucursalForm'
 import SucursalDetailsModal from '../../components/modals/SucursalDetailsModal'

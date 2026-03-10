@@ -7,7 +7,7 @@ import LoginPage from './pages/auth/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 
 // Importar contextos
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider } from './context/Authcontext'
 
 // Importar componentes
 import ProtectedRoute from './components/auth/ProtectedRoute'

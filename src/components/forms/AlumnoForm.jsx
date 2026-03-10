@@ -27,7 +27,7 @@ import {
   CalendarDays
 } from 'lucide-react'
 import { alumnosAPI, tutoresAPI, sucursalesAPI, authAPI, utils, GENDER_OPTIONS, STATUS_OPTIONS, ID_TYPES } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
 // NUEVO: Registrar locale español

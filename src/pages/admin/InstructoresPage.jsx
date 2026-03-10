@@ -22,7 +22,7 @@ import {
     GraduationCap
 } from 'lucide-react'
 import { instructoresAPI, sucursalesAPI } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import InstructorForm from '../../components/forms/InstructorForm'
 import InstructorDetailsModal from '../../components/modals/InstructorDetailsModal'
 import toast from 'react-hot-toast'

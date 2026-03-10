@@ -21,7 +21,7 @@ import {
   Trash2
 } from 'lucide-react'
 import { alumnosAPI, sucursalesAPI, utils } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 
 // Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'

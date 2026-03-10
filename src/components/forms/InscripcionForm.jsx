@@ -16,7 +16,7 @@ import {
     Trash2
 } from 'lucide-react'
 import { examenesAPI, alumnosAPI, utils } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
 const InscripcionForm = ({ examen, isOpen, onClose, onSuccess }) => {

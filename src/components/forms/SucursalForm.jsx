@@ -14,7 +14,7 @@ import {
   Loader
 } from 'lucide-react'
 import { sucursalesAPI, authAPI } from '../../services/APIservice'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
 const SucursalForm = ({ 
