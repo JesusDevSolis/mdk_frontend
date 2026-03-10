@@ -17,7 +17,8 @@ import {
   Settings,
   Edit3,
   Camera,
-  GraduationCap
+  GraduationCap,
+  Dumbbell
 } from 'lucide-react'
 import { utils, BELT_LEVELS_DISPLAY, GENDER_OPTIONS, STATUS_OPTIONS } from '../../services/APIservice'
 
@@ -121,6 +122,32 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
     }
   }
 
+  // ── v1.5: helper para mostrar disciplina ────────────────────────────────────
+  const PROGRAMA_DISPLAY = {
+    'tae-kwon-do':       { label: 'Tae Kwon Do',       emoji: '🥋', color: 'bg-blue-100 text-blue-800' },
+    'tang-soo-do':       { label: 'Tang Soo Do',        emoji: '🥊', color: 'bg-purple-100 text-purple-800' },
+    'hapkido':           { label: 'Hapkido',            emoji: '🤸', color: 'bg-green-100 text-green-800' },
+    'gumdo':             { label: 'Gumdo',              emoji: '⚔️', color: 'bg-orange-100 text-orange-800' },
+    'pequenos-dragones': { label: 'Pequeños Dragones',  emoji: '🐉', color: 'bg-amber-100 text-amber-800' },
+  }
+
+  const MARITAL_STATUS_DISPLAY = {
+    'soltero':     'Soltero/a',
+    'casado':      'Casado/a',
+    'divorciado':  'Divorciado/a',
+    'viudo':       'Viudo/a',
+    'union-libre': 'Unión libre',
+    'otro':        'Otro',
+  }
+
+  const getProgramaInfo = () => {
+    const prog = alumno.enrollment?.programa
+    if (!prog) return null
+    return PROGRAMA_DISPLAY[prog] || { label: prog, emoji: '🥋', color: 'bg-gray-100 text-gray-800' }
+  }
+
+  const programaInfo = getProgramaInfo()
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
@@ -151,6 +178,12 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
                   {getStatusDisplay()}
                 </span>
+                {/* v1.5: badge de disciplina */}
+                {programaInfo && (
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${programaInfo.color}`}>
+                    {programaInfo.emoji} {programaInfo.label}
+                  </span>
+                )}
                 <span>ID: {alumno.enrollment?.studentId || 'Sin ID'}</span>
                 <span>{age}</span>
               </div>
@@ -218,6 +251,38 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                     <label className="text-sm font-medium text-gray-600">Género</label>
                     <p className="text-gray-900">{getGenderDisplay()}</p>
                   </div>
+
+                  {/* ── v1.5: campos nuevos ── */}
+                  {alumno.birthPlace && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Lugar de Nacimiento</label>
+                      <p className="text-gray-900">{alumno.birthPlace}</p>
+                    </div>
+                  )}
+                  {alumno.height && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Estatura</label>
+                      <p className="text-gray-900">{alumno.height} m</p>
+                    </div>
+                  )}
+                  {alumno.maritalStatus && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Estado Civil</label>
+                      <p className="text-gray-900">{MARITAL_STATUS_DISPLAY[alumno.maritalStatus] || alumno.maritalStatus}</p>
+                    </div>
+                  )}
+                  {alumno.occupation && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Ocupación</label>
+                      <p className="text-gray-900">{alumno.occupation}</p>
+                    </div>
+                  )}
+                  {alumno.gradeLevel && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Grado Escolar</label>
+                      <p className="text-gray-900">{alumno.gradeLevel}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -378,6 +443,20 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                       }
                     </p>
                   </div>
+
+                  {/* ── v1.5: Disciplina ── */}
+                  {programaInfo && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Disciplina</label>
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${programaInfo.color}`}>
+                          <span>{programaInfo.emoji}</span>
+                          <span>{programaInfo.label}</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-sm font-medium text-gray-600">Fecha de Inscripción</label>
                     <p className="text-gray-900">{formatDate(alumno.enrollment?.enrollmentDate)}</p>
@@ -396,6 +475,20 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                       </p>
                     </div>
                   </div>
+
+                  {/* ── v1.5: Motivo y recomendación ── */}
+                  {alumno.enrollment?.enrollmentReason && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Motivo de Inscripción</label>
+                      <p className="text-gray-900">{alumno.enrollment.enrollmentReason}</p>
+                    </div>
+                  )}
+                  {alumno.enrollment?.recommendedBy && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Recomendado por</label>
+                      <p className="text-gray-900">{alumno.enrollment.recommendedBy}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
