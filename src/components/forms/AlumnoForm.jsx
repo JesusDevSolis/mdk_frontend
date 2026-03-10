@@ -24,7 +24,9 @@ import {
   ChevronDown,
   ChevronUp,
   Camera,
-  CalendarDays
+  CalendarDays,
+  Dumbbell,
+  BookOpen
 } from 'lucide-react'
 import { alumnosAPI, tutoresAPI, sucursalesAPI, authAPI, utils, GENDER_OPTIONS, STATUS_OPTIONS, ID_TYPES } from '../../services/APIservice'
 import { useAuth } from '../../context/Authcontext'
@@ -33,6 +35,24 @@ import toast from 'react-hot-toast'
 // NUEVO: Registrar locale español
 registerLocale('es', es)
 setDefaultLocale('es')
+
+// ── Constantes de disciplinas (v1.5) ──────────────────────────────────────────
+const PROGRAMA_OPTIONS = [
+  { value: 'tae-kwon-do',       label: 'Tae Kwon Do',       emoji: '🥋' },
+  { value: 'tang-soo-do',       label: 'Tang Soo Do',        emoji: '🥊' },
+  { value: 'hapkido',           label: 'Hapkido',            emoji: '🤸' },
+  { value: 'gumdo',             label: 'Gumdo',              emoji: '⚔️' },
+  { value: 'pequenos-dragones', label: 'Pequeños Dragones',  emoji: '🐉' },
+]
+
+const MARITAL_STATUS_OPTIONS = [
+  { value: 'soltero',     label: 'Soltero/a' },
+  { value: 'casado',      label: 'Casado/a' },
+  { value: 'divorciado',  label: 'Divorciado/a' },
+  { value: 'viudo',       label: 'Viudo/a' },
+  { value: 'union-libre', label: 'Unión libre' },
+  { value: 'otro',        label: 'Otro' },
+]
 
 const AlumnoForm = ({ 
   alumno = null, 
@@ -72,6 +92,13 @@ const AlumnoForm = ({
       gender: '',
       email: '',
       phone: '',
+      // ── v1.5: campos nuevos de información personal ──
+      birthPlace: '',
+      height: '',
+      maritalStatus: '',
+      occupation: '',
+      gradeLevel: '',
+      // ─────────────────────────────────────────────────
       address: {
         street: '',
         neighborhood: '',
@@ -121,7 +148,12 @@ const AlumnoForm = ({
         sucursal: '',
         status: 'activo',
         monthlyFee: '',
-        registrationFee: ''
+        registrationFee: '',
+        // ── v1.5: campos nuevos de matrícula ──
+        programa: '',
+        enrollmentReason: '',
+        recommendedBy: '',
+        // ──────────────────────────────────────
       },
       belt: {
         level: 'blanco',
@@ -139,6 +171,8 @@ const AlumnoForm = ({
 
   // Watch para detectar cambios en la fecha de nacimiento
   const watchDateOfBirth = watch('dateOfBirth')
+  // Watch para detectar disciplina seleccionada (v1.5)
+  const watchPrograma = watch('enrollment.programa')
 
   // NUEVO: Calcular edad automáticamente cuando cambia la fecha
   useEffect(() => {
@@ -202,6 +236,13 @@ const AlumnoForm = ({
       setValue('email', alumno.email || '')
       setValue('phone', alumno.phone || '')
       
+      // ✅ v1.5: CARGAR CAMPOS NUEVOS DE INFORMACIÓN PERSONAL
+      setValue('birthPlace',    alumno.birthPlace    || '')
+      setValue('height',        alumno.height        || '')
+      setValue('maritalStatus', alumno.maritalStatus || '')
+      setValue('occupation',    alumno.occupation    || '')
+      setValue('gradeLevel',    alumno.gradeLevel    || '')
+      
       // ✅ CARGAR DIRECCIÓN
       setValue('address.street', alumno.address?.street || '')
       setValue('address.neighborhood', alumno.address?.neighborhood || '')
@@ -249,6 +290,11 @@ const AlumnoForm = ({
       setValue('enrollment.status', alumno.enrollment?.status || 'activo')
       setValue('enrollment.monthlyFee', alumno.enrollment?.monthlyFee || 0)
       setValue('enrollment.registrationFee', alumno.enrollment?.registrationFee || 0)
+      
+      // ✅ v1.5: CARGAR CAMPOS NUEVOS DE MATRÍCULA
+      setValue('enrollment.programa',         alumno.enrollment?.programa         || '')
+      setValue('enrollment.enrollmentReason', alumno.enrollment?.enrollmentReason || '')
+      setValue('enrollment.recommendedBy',    alumno.enrollment?.recommendedBy    || '')
       
       // ✅ CARGAR CINTURÓN - CALENDARIO MEJORADO
       setValue('belt.level', alumno.belt?.level || 'blanco')
@@ -438,6 +484,10 @@ const AlumnoForm = ({
       if (formData.enrollment?.registrationFee) {
         formData.enrollment.registrationFee = Number(formData.enrollment.registrationFee)
       }
+      // v1.5: convertir estatura a float
+      if (formData.height) {
+        formData.height = parseFloat(formData.height)
+      }
       
       // Remover datos del nuevo tutor del payload
       delete formData.newTutor
@@ -495,6 +545,9 @@ const AlumnoForm = ({
   }
 
   if (!isOpen) return null
+
+  // v1.5: detectar si la disciplina es Pequeños Dragones
+  const isPequenoDragon = watchPrograma === 'pequenos-dragones'
 
   return (
     <>
@@ -660,6 +713,66 @@ const AlumnoForm = ({
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[calc(90vh-140px)]">
               
+              {/* ✅ DISCIPLINA / PROGRAMA - v1.5 - VA PRIMERO */}
+              <div className="bg-gradient-to-r from-primary-50 to-indigo-50 rounded-lg p-5 border-2 border-primary-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Dumbbell className="w-5 h-5 text-primary-600" />
+                  Disciplina / Programa
+                  <span className="text-red-500">*</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {PROGRAMA_OPTIONS.map(prog => {
+                    const isSelected = watchPrograma === prog.value
+                    return (
+                      <label
+                        key={prog.value}
+                        className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all select-none
+                          ${isSelected
+                            ? 'border-primary-500 bg-primary-50 shadow-md ring-2 ring-primary-300'
+                            : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50'
+                          }`}
+                      >
+                        <input
+                          type="radio"
+                          value={prog.value}
+                          className="sr-only"
+                          {...register('enrollment.programa', {
+                            required: 'Selecciona una disciplina'
+                          })}
+                        />
+                        <span className="text-2xl">{prog.emoji}</span>
+                        <span className={`text-xs font-semibold text-center leading-tight
+                          ${isSelected ? 'text-primary-700' : 'text-gray-600'}`}>
+                          {prog.label}
+                        </span>
+                        {isSelected && (
+                          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                </div>
+                {errors.enrollment?.programa && (
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.enrollment.programa.message}
+                  </p>
+                )}
+                {isPequenoDragon && (
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                    <span className="text-lg">🐉</span>
+                    <p className="text-sm text-amber-800">
+                      <span className="font-semibold">Pequeños Dragones</span> — Programa para niños de 3 a 5 años.
+                      Se habilitará el campo de <span className="font-semibold">Grado Escolar</span> abajo.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* ✅ INFORMACIÓN PERSONAL - SIEMPRE VISIBLE */}
               <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -818,6 +931,96 @@ const AlumnoForm = ({
                       {...register('phone')}
                     />
                   </div>
+
+                  {/* ── v1.5: Lugar de Nacimiento ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lugar de Nacimiento
+                    </label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="Ej: San Cristóbal de las Casas, Chis."
+                      {...register('birthPlace', { maxLength: { value: 100, message: 'Máximo 100 caracteres' } })}
+                    />
+                    {errors.birthPlace && (
+                      <p className="text-red-500 text-sm mt-1">{errors.birthPlace.message}</p>
+                    )}
+                  </div>
+
+                  {/* ── v1.5: Estatura ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estatura (metros)
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      placeholder="Ej: 1.75"
+                      step="0.01"
+                      min="0.30"
+                      max="2.50"
+                      {...register('height', {
+                        min: { value: 0.30, message: 'Mínimo 0.30 m' },
+                        max: { value: 2.50, message: 'Máximo 2.50 m' }
+                      })}
+                    />
+                    {errors.height && (
+                      <p className="text-red-500 text-sm mt-1">{errors.height.message}</p>
+                    )}
+                  </div>
+
+                  {/* ── v1.5: Estado Civil (solo adultos) ── */}
+                  {!isMinor && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Estado Civil
+                      </label>
+                      <select className="input-field" {...register('maritalStatus')}>
+                        <option value="">Seleccionar...</option>
+                        {MARITAL_STATUS_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* ── v1.5: Ocupación (solo adultos) ── */}
+                  {!isMinor && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ocupación
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Ej: Empleado, Estudiante, Comerciante..."
+                        {...register('occupation', { maxLength: { value: 100, message: 'Máximo 100 caracteres' } })}
+                      />
+                      {errors.occupation && (
+                        <p className="text-red-500 text-sm mt-1">{errors.occupation.message}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── v1.5: Grado Escolar (menores + Pequeños Dragones) ── */}
+                  {(isMinor || isPequenoDragon) && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Grado Escolar
+                        {isPequenoDragon && <span className="ml-1 text-xs text-amber-600">(Jardín de niños)</span>}
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder={isPequenoDragon ? 'Ej: Maternal, Kínder 1, Kínder 2...' : 'Ej: 3° Primaria, 1° Secundaria...'}
+                        {...register('gradeLevel', { maxLength: { value: 50, message: 'Máximo 50 caracteres' } })}
+                      />
+                      {errors.gradeLevel && (
+                        <p className="text-red-500 text-sm mt-1">{errors.gradeLevel.message}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1341,6 +1544,37 @@ const AlumnoForm = ({
                       step="0.01"
                       {...register('enrollment.registrationFee')}
                     />
+                  </div>
+
+                  {/* ── v1.5: Motivo de inscripción ── */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Motivo de inscripción
+                    </label>
+                    <textarea
+                      className="input-field min-h-[80px] resize-none"
+                      placeholder="¿Por qué desea inscribirse? Ej: Mejorar disciplina, autodefensa, actividad física..."
+                      {...register('enrollment.enrollmentReason', { maxLength: { value: 500, message: 'Máximo 500 caracteres' } })}
+                    />
+                    {errors.enrollment?.enrollmentReason && (
+                      <p className="text-red-500 text-sm mt-1">{errors.enrollment.enrollmentReason.message}</p>
+                    )}
+                  </div>
+
+                  {/* ── v1.5: Recomendado por ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Recomendado por
+                    </label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="Nombre de quien recomendó la escuela"
+                      {...register('enrollment.recommendedBy', { maxLength: { value: 100, message: 'Máximo 100 caracteres' } })}
+                    />
+                    {errors.enrollment?.recommendedBy && (
+                      <p className="text-red-500 text-sm mt-1">{errors.enrollment.recommendedBy.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
