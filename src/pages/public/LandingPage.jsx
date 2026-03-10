@@ -175,7 +175,7 @@ const LandingPage = () => {
               Sistema de gestión profesional para escuelas de taekwondo
             </p>
             <p className="text-gray-500 text-sm">
-              © 2024 TaekwondoSys. Todos los derechos reservados.
+              © 2026 TaekwondoSys. Todos los derechos reservados.
             </p>
           </div>
         </div>
