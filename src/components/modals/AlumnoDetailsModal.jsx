@@ -209,7 +209,7 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
             {/* Información principal */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {alumno.fullName || [alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}
+                {[alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}
               </h2>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
