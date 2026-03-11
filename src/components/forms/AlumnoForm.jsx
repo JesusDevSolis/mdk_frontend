@@ -88,6 +88,7 @@ const AlumnoForm = ({
     defaultValues: {
       firstName: '',
       lastName: '',
+      secondLastName: '',
       dateOfBirth: '',
       gender: '',
       email: '',
@@ -153,6 +154,7 @@ const AlumnoForm = ({
         programa: '',
         enrollmentReason: '',
         recommendedBy: '',
+        observaciones: '',
         // ──────────────────────────────────────
       },
       belt: {
@@ -232,6 +234,7 @@ const AlumnoForm = ({
       // ✅ CARGAR TODOS LOS DATOS DEL ALUMNO
       setValue('firstName', alumno.firstName || '')
       setValue('lastName', alumno.lastName || '')
+      setValue('secondLastName', alumno.secondLastName || '')
       setValue('gender', alumno.gender || '')
       setValue('email', alumno.email || '')
       setValue('phone', alumno.phone || '')
@@ -295,6 +298,7 @@ const AlumnoForm = ({
       setValue('enrollment.programa',         alumno.enrollment?.programa         || '')
       setValue('enrollment.enrollmentReason', alumno.enrollment?.enrollmentReason || '')
       setValue('enrollment.recommendedBy',    alumno.enrollment?.recommendedBy    || '')
+      setValue('enrollment.observaciones',    alumno.enrollment?.observaciones    || '')
       
       // ✅ CARGAR CINTURÓN - CALENDARIO MEJORADO
       setValue('belt.level', alumno.belt?.level || 'blanco')
@@ -799,7 +803,7 @@ const AlumnoForm = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Apellidos *
+                      Apellido Paterno *
                     </label>
                     <input
                       type="text"
@@ -811,6 +815,24 @@ const AlumnoForm = ({
                     />
                     {errors.lastName && (
                       <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+                    )}
+                  </div>
+
+                  {/* ── v1.5: Apellido Materno ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Apellido Materno
+                    </label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="Apellido materno (opcional)"
+                      {...register('secondLastName', {
+                        maxLength: { value: 50, message: 'Máximo 50 caracteres' }
+                      })}
+                    />
+                    {errors.secondLastName && (
+                      <p className="text-red-500 text-sm mt-1">{errors.secondLastName.message}</p>
                     )}
                   </div>
 
@@ -1574,6 +1596,22 @@ const AlumnoForm = ({
                     />
                     {errors.enrollment?.recommendedBy && (
                       <p className="text-red-500 text-sm mt-1">{errors.enrollment.recommendedBy.message}</p>
+                    )}
+                  </div>
+
+                  {/* ── v1.5: Observaciones ── */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Observaciones
+                    </label>
+                    <textarea
+                      className="input-field resize-none"
+                      rows={3}
+                      placeholder="Observaciones adicionales sobre el alumno o su inscripción..."
+                      {...register('enrollment.observaciones', { maxLength: { value: 500, message: 'Máximo 500 caracteres' } })}
+                    />
+                    {errors.enrollment?.observaciones && (
+                      <p className="text-red-500 text-sm mt-1">{errors.enrollment.observaciones.message}</p>
                     )}
                   </div>
                 </div>
