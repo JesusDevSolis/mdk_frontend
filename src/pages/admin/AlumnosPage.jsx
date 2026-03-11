@@ -198,7 +198,7 @@ const AlumnosPage = () => {
   }
 
   const handleDelete = async (alumno) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar al alumno ${alumno.fullName || `${alumno.firstName} ${alumno.lastName}`}?`)) {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al alumno ${alumno.fullName || [alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}?`)) {
       try {
         const response = await alumnosAPI.delete(alumno._id)
         if (response.success) {
@@ -399,7 +399,7 @@ const AlumnosPage = () => {
           {/* Información principal */}
           <div className="mb-3">
             <h3 className="font-semibold text-gray-900 text-lg leading-tight">
-              {alumno.fullName || `${alumno.firstName} ${alumno.lastName}`}
+              {alumno.fullName || [alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}
             </h3>
             <p className="text-gray-500 text-sm">
               {edad !== null ? `${edad} años` : 'Edad no especificada'}

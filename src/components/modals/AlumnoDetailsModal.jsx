@@ -209,7 +209,7 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
             {/* Información principal */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {alumno.fullName || `${alumno.firstName} ${alumno.lastName}`}
+                {alumno.fullName || [alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}
               </h2>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
@@ -293,14 +293,18 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                   Información Personal
                 </h3>
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Nombre</label>
                       <p className="text-gray-900">{alumno.firstName || 'No especificado'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Apellidos</label>
+                      <label className="text-sm font-medium text-gray-600">Apellido Paterno</label>
                       <p className="text-gray-900">{alumno.lastName || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Apellido Materno</label>
+                      <p className="text-gray-900">{alumno.secondLastName || '—'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
