@@ -324,6 +324,21 @@ export const alumnosAPI = {
       params: { status, ...params }
     })
     return response.data
+  },
+
+  // ── v1.5: Generar / Descargar PDF de Solicitud de Ingreso ────────────────
+  // Retorna la response completa (blob) para crear URL de descarga en el frontend
+  getSolicitudPDF: async (id) => {
+    const response = await api.get(`/alumnos/${id}/solicitud-pdf`, {
+      responseType: 'blob'
+    })
+    return response   // response.data = Blob, response.headers['content-disposition']
+  },
+
+  // Verifica si ya existe un PDF guardado para este alumno (info del alumno)
+  getSolicitudPDFInfo: async (id) => {
+    const response = await api.get(`/alumnos/${id}`)
+    return response.data?.data?.alumno?.solicitudPdf || null
   }
 }
 

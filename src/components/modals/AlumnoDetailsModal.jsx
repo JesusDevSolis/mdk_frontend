@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { 
   X, 
   User, 
@@ -18,17 +18,26 @@ import {
   Edit3,
   Camera,
   GraduationCap,
-  Dumbbell
+  Dumbbell,
+  FileDown,
+  Printer,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react'
-import { utils, BELT_LEVELS_DISPLAY, GENDER_OPTIONS, STATUS_OPTIONS } from '../../services/APIservice'
+import { utils, BELT_LEVELS_DISPLAY, GENDER_OPTIONS, STATUS_OPTIONS, alumnosAPI } from '../../services/APIservice'
 
 // Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'
 import PermissionGuard from '../../components/auth/PermissionGuard'
+import toast from 'react-hot-toast'
 
 const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
   // Hook de permisos
   const { canUpdate } = usePermissions('alumnos')
+
+  // ── v1.5: Estado para generación de PDF ───────────────────────────────────
+  const [loadingPdf, setLoadingPdf]   = useState(false)
+  const [pdfReady,   setPdfReady]     = useState(false)
   
   if (!isOpen || !alumno) return null
 
@@ -122,6 +131,34 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
     }
   }
 
+  // ── v1.5: Generar y abrir PDF de Solicitud de Ingreso ─────────────────────
+  const handleGenerarPDF = async () => {
+    try {
+      setLoadingPdf(true)
+      setPdfReady(false)
+
+      const response = await alumnosAPI.getSolicitudPDF(alumno._id)
+
+      // Crear Blob URL y abrir en nueva pestaña
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url  = URL.createObjectURL(blob)
+
+      // Abrir en nueva pestaña para vista previa + impresión
+      const tab = window.open(url, '_blank')
+
+      // Liberar la URL después de un momento
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+
+      setPdfReady(true)
+      setTimeout(() => setPdfReady(false), 3000) // Resetear ícono de éxito
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      toast.error('Error al generar el PDF de solicitud')
+    } finally {
+      setLoadingPdf(false)
+    }
+  }
+
   // ── v1.5: helper para mostrar disciplina ────────────────────────────────────
   const PROGRAMA_DISPLAY = {
     'tae-kwon-do':       { label: 'Tae Kwon Do',       emoji: '🥋', color: 'bg-blue-100 text-blue-800' },
@@ -192,6 +229,35 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
 
           {/* Botones de acción */}
           <div className="flex items-center gap-2">
+            {/* ── v1.5: Botón Solicitud de Ingreso PDF ── */}
+            <button
+              onClick={handleGenerarPDF}
+              disabled={loadingPdf}
+              title={alumno.solicitudPdf?.generatedAt
+                ? `Última generación: ${new Date(alumno.solicitudPdf.generatedAt).toLocaleDateString('es-MX')}`
+                : 'Generar Solicitud de Ingreso'}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                pdfReady
+                  ? 'bg-green-50 border-green-300 text-green-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {loadingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : pdfReady ? (
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">
+                {loadingPdf ? 'Generando...' : pdfReady ? '¡Listo!' : 'Solicitud de Ingreso'}
+              </span>
+              {/* Indicador si ya tiene PDF guardado */}
+              {alumno.solicitudPdf?.fileName && !loadingPdf && !pdfReady && (
+                <span className="w-2 h-2 rounded-full bg-blue-400" title="PDF guardado en el sistema" />
+              )}
+            </button>
+
             {/* ✅ CORREGIDO: Botón Editar con permisos */}
             <PermissionGuard module="alumnos" action="update">
               <button
@@ -603,6 +669,61 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                     <p>Creado por: {alumno.createdBy.name}</p>
                   )}
                 </div>
+              </div>
+
+              {/* ── v1.5: Solicitud de Ingreso PDF ────────────────────────── */}
+              <div className={`rounded-lg p-5 border ${
+                alumno.solicitudPdf?.fileName
+                  ? 'bg-blue-50 border-blue-200'
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Solicitud de Ingreso
+                </h3>
+
+                {alumno.solicitudPdf?.fileName ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-green-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                      <span>PDF guardado en el sistema</span>
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>Archivo: {alumno.solicitudPdf.fileName}</p>
+                      {alumno.solicitudPdf.generatedAt && (
+                        <p>Generado: {formatDate(alumno.solicitudPdf.generatedAt)}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleGenerarPDF}
+                      disabled={loadingPdf}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {loadingPdf ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Generando...</>
+                      ) : (
+                        <><Printer className="w-4 h-4" /> Ver / Imprimir</>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">
+                      El PDF se genera automáticamente al inscribir al alumno, o puedes generarlo manualmente.
+                    </p>
+                    <button
+                      onClick={handleGenerarPDF}
+                      disabled={loadingPdf}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {loadingPdf ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Generando...</>
+                      ) : (
+                        <><FileDown className="w-4 h-4" /> Generar Solicitud de Ingreso</>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
