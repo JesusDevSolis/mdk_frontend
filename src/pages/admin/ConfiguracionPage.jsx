@@ -12,9 +12,13 @@ import {
     ClipboardCheck,
     Bell,
     Award,
-    Info
+    Info,
+    Layers,
+    Upload,
+    Trash2,
+    ImageIcon
 } from 'lucide-react'
-import { configuracionesAPI } from '../../services/APIservice'
+import { configuracionesAPI, disciplinasAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
 import { PagePermissionGuard } from '../../components/auth/PermissionGuard'
 
@@ -33,6 +37,9 @@ const ConfiguracionPage = () => {
     const [activeTab, setActiveTab] = useState('general')
     const [hasChanges, setHasChanges] = useState(false)
     const [estadisticas, setEstadisticas] = useState(null)
+    // v1.5 — Disciplinas
+    const [disciplinas, setDisciplinas] = useState([])
+    const [loadingLogo, setLoadingLogo] = useState({})
 
     // Definición de pestañas
     const tabs = [
@@ -71,12 +78,19 @@ const ConfiguracionPage = () => {
             label: 'Cinturones', 
             icon: Award,
             description: 'Progresión y requisitos de cinturones'
+        },
+        { 
+            id: 'disciplinas', 
+            label: 'Disciplinas', 
+            icon: Layers,
+            description: 'Logos e imagen por disciplina'
         }
     ]
 
     useEffect(() => {
         loadConfiguraciones()
         loadEstadisticas()
+        loadDisciplinas()
     }, [])
 
     // Cargar todas las configuraciones agrupadas
@@ -105,6 +119,46 @@ const ConfiguracionPage = () => {
             }
         } catch (error) {
             console.error('Error cargando estadísticas:', error)
+        }
+    }
+
+    // v1.5 — Cargar disciplinas
+    const loadDisciplinas = async () => {
+        try {
+            const response = await disciplinasAPI.getAll()
+            if (response.success) setDisciplinas(response.data)
+        } catch (error) {
+            console.error('Error cargando disciplinas:', error)
+        }
+    }
+
+    // v1.5 — Subir logo de disciplina
+    const handleUploadLogo = async (disciplinaId, file) => {
+        if (!file) return
+        setLoadingLogo(prev => ({ ...prev, [disciplinaId]: true }))
+        try {
+            await disciplinasAPI.updateLogo(disciplinaId, file)
+            toast.success('Logo actualizado correctamente')
+            await loadDisciplinas()
+        } catch (error) {
+            toast.error('Error al subir el logo')
+        } finally {
+            setLoadingLogo(prev => ({ ...prev, [disciplinaId]: false }))
+        }
+    }
+
+    // v1.5 — Eliminar logo de disciplina
+    const handleDeleteLogo = async (disciplinaId, nombre) => {
+        if (!window.confirm(`¿Eliminar el logo de ${nombre}?`)) return
+        setLoadingLogo(prev => ({ ...prev, [disciplinaId]: true }))
+        try {
+            await disciplinasAPI.deleteLogo(disciplinaId)
+            toast.success('Logo eliminado')
+            await loadDisciplinas()
+        } catch (error) {
+            toast.error('Error al eliminar el logo')
+        } finally {
+            setLoadingLogo(prev => ({ ...prev, [disciplinaId]: false }))
         }
     }
 
@@ -221,6 +275,13 @@ const ConfiguracionPage = () => {
                 return <NotificacionesConfigForm {...props} />
             case 'cinturones':
                 return <CinturonesConfigForm {...props} />
+            case 'disciplinas':
+                return <DisciplinasTab
+                    disciplinas={disciplinas}
+                    loadingLogo={loadingLogo}
+                    onUpload={handleUploadLogo}
+                    onDelete={handleDeleteLogo}
+                />
             default:
                 return null
         }
@@ -376,6 +437,116 @@ const ConfiguracionPage = () => {
                 </div>
             </div>
         </PagePermissionGuard>
+    )
+}
+
+// ── v1.5: Componente de pestaña Disciplinas ───────────────────────────────────
+const DISCIPLINA_EMOJIS = {
+  'tae-kwon-do'      : '🥋',
+  'tang-soo-do'      : '🥊',
+  'hapkido'          : '🤼',
+  'gumdo'            : '⚔️',
+  'pequenos-dragones': '🐉',
+}
+
+const DisciplinasTab = ({ disciplinas, loadingLogo, onUpload, onDelete }) => {
+    if (!disciplinas.length) {
+        return (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <Layers className="w-12 h-12 mb-3 opacity-40" />
+                <p className="text-sm">No hay disciplinas registradas</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+                <Info className="w-4 h-4 text-blue-500" />
+                <p className="text-sm text-gray-500">
+                    Sube el logo de cada disciplina. Se usará en los PDFs de solicitud de ingreso y en reportes.
+                    Formatos aceptados: JPG, PNG, WEBP. Máximo 5MB.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {disciplinas.map(disc => {
+                    const isLoading = loadingLogo[disc._id]
+                    const emoji     = DISCIPLINA_EMOJIS[disc.slug] || '🥋'
+
+                    return (
+                        <div key={disc._id}
+                            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+
+                            {/* Header disciplina */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="text-2xl">{emoji}</span>
+                                <div>
+                                    <h3 className="font-semibold text-gray-800 text-sm leading-tight">
+                                        {disc.nombre}
+                                    </h3>
+                                    <p className="text-xs text-gray-400">{disc.slug}</p>
+                                </div>
+                            </div>
+
+                            {/* Preview del logo */}
+                            <div className="flex items-center justify-center bg-gray-50 border border-dashed border-gray-200 rounded-lg mb-4"
+                                style={{ height: 100 }}>
+                                {disc.logoUrl ? (
+                                    <img
+                                        src={disc.logoUrl}
+                                        alt={`Logo ${disc.nombre}`}
+                                        className="max-h-24 max-w-full object-contain rounded"
+                                        onError={e => { e.target.style.display='none' }}
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center text-gray-300">
+                                        <ImageIcon className="w-8 h-8 mb-1" />
+                                        <span className="text-xs">Sin logo</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex gap-2">
+                                {/* Botón subir */}
+                                <label className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors
+                                    ${isLoading
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'}`}>
+                                    {isLoading
+                                        ? <Loader className="w-3.5 h-3.5 animate-spin" />
+                                        : <Upload className="w-3.5 h-3.5" />}
+                                    {disc.logoUrl ? 'Cambiar' : 'Subir logo'}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        disabled={isLoading}
+                                        onChange={e => {
+                                            const file = e.target.files?.[0]
+                                            if (file) onUpload(disc._id, file)
+                                            e.target.value = ''
+                                        }}
+                                    />
+                                </label>
+
+                                {/* Botón eliminar (solo si hay logo) */}
+                                {disc.logoUrl && (
+                                    <button
+                                        onClick={() => onDelete(disc._id, disc.nombre)}
+                                        disabled={isLoading}
+                                        className="px-3 py-2 rounded-lg text-xs font-medium bg-red-50 text-red-500 hover:bg-red-100 border border-red-200 transition-colors disabled:opacity-40"
+                                        title="Eliminar logo">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
     )
 }
 

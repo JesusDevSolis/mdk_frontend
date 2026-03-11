@@ -1213,5 +1213,30 @@ export const checkBackendConnection = async () => {
   }
 }
 
+// ── v1.5: API de Disciplinas ──────────────────────────────────────────────────
+export const disciplinasAPI = {
+  // Obtener todas las disciplinas activas
+  getAll: async () => {
+    const response = await api.get('/disciplinas')
+    return response.data
+  },
+
+  // Subir / reemplazar logo de una disciplina
+  updateLogo: async (id, file) => {
+    const formData = new FormData()
+    formData.append('logo', file)
+    const response = await api.put(`/disciplinas/${id}/logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+  },
+
+  // Eliminar logo de una disciplina
+  deleteLogo: async (id) => {
+    const response = await api.delete(`/disciplinas/${id}/logo`)
+    return response.data
+  }
+}
+
 // Exportar la instancia de axios por si se necesita usar directamente
 export default api
