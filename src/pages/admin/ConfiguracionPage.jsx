@@ -497,14 +497,16 @@ const DisciplinasTab = ({ disciplinas, loadingLogo, onUpload, onDelete }) => {
                                         src={disc.logoUrl}
                                         alt={`Logo ${disc.nombre}`}
                                         className="max-h-24 max-w-full object-contain rounded"
-                                        onError={e => { e.target.style.display='none' }}
+                                        onError={e => {
+                                            e.target.style.display = 'none'
+                                            e.target.nextSibling.style.display = 'flex'
+                                        }}
                                     />
-                                ) : (
-                                    <div className="flex flex-col items-center text-gray-300">
-                                        <ImageIcon className="w-8 h-8 mb-1" />
-                                        <span className="text-xs">Sin logo</span>
-                                    </div>
-                                )}
+                                ) : null}
+                                <div className={`flex-col items-center text-gray-300 ${disc.logoUrl ? 'hidden' : 'flex'}`}>
+                                    <ImageIcon className="w-8 h-8 mb-1" />
+                                    <span className="text-xs">Sin logo</span>
+                                </div>
                             </div>
 
                             {/* Acciones */}

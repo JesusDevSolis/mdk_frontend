@@ -1214,10 +1214,21 @@ export const checkBackendConnection = async () => {
 }
 
 // ── v1.5: API de Disciplinas ──────────────────────────────────────────────────
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '')
+
 export const disciplinasAPI = {
   // Obtener todas las disciplinas activas
   getAll: async () => {
     const response = await api.get('/disciplinas')
+    if (response.data?.success && Array.isArray(response.data.data)) {
+      // Reconstruir logoUrl con la URL real del backend (evita BACKEND_URL indefinida en Railway)
+      response.data.data = response.data.data.map(d => ({
+        ...d,
+        logoUrl: d.logo?.url
+          ? (d.logo.url.startsWith('http') ? d.logo.url : `${BACKEND_BASE_URL}${d.logo.url}`)
+          : null
+      }))
+    }
     return response.data
   },
 
