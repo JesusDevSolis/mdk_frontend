@@ -248,6 +248,24 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
 
   // ===== HANDLERS =====
 
+  // Calcular la próxima fecha de cobro según el paymentDay del alumno
+  const calcularProximaDueDate = (paymentDay) => {
+    if (!paymentDay) return null
+    const hoy    = new Date()
+    const año    = hoy.getFullYear()
+    const mes    = hoy.getMonth()       // 0-based
+
+    // Intentar en el mes actual
+    let fecha = new Date(año, mes, paymentDay)
+
+    // Si ya pasó (o es hoy), mover al mes siguiente
+    if (fecha <= hoy) {
+      fecha = new Date(año, mes + 1, paymentDay)
+    }
+
+    return fecha
+  }
+
   const handleAlumnoChange = async (e) => {
     const alumnoId = e.target.value
     console.log('👤 Alumno seleccionado:', alumnoId)
@@ -276,6 +294,21 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
         const sucursalId = alumno.enrollment.sucursal._id || alumno.enrollment.sucursal
         setValue('sucursal', sucursalId)
         console.log('✅ Sucursal auto-llenada:', sucursalId)
+      }
+
+      // ── Paso A: auto-sugerir dueDate según paymentDay del alumno ──
+      const paymentDay = alumno.enrollment?.paymentDay
+      if (paymentDay) {
+        const sugerida = calcularProximaDueDate(paymentDay)
+        if (sugerida) {
+          setDueDate(sugerida)
+          console.log(`✅ Fecha de pago sugerida (día ${paymentDay}):`, sugerida.toLocaleDateString('es-MX'))
+        }
+      }
+
+      // ── Auto-llenar monto si es colegiatura ──
+      if (watchType === 'colegiatura' && alumno.enrollment?.monthlyFee) {
+        setValue('amount', alumno.enrollment.monthlyFee)
       }
     }
   }
@@ -451,7 +484,34 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
                       <p className="text-gray-600">Estado</p>
                       <p className="font-medium text-gray-900">{selectedAlumno.enrollment?.status}</p>
                     </div>
+                    {selectedAlumno.enrollment?.monthlyFee > 0 && (
+                      <div>
+                        <p className="text-gray-600">Cuota mensual</p>
+                        <p className="font-medium text-green-700">
+                          ${selectedAlumno.enrollment.monthlyFee.toLocaleString('es-MX')} MXN
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlumno.enrollment?.paymentDay && (
+                      <div>
+                        <p className="text-gray-600">Día de pago</p>
+                        <p className="font-medium text-blue-700">
+                          Día {selectedAlumno.enrollment.paymentDay} de cada mes
+                        </p>
+                      </div>
+                    )}
                   </div>
+                  {selectedAlumno.enrollment?.paymentDay && dueDate && (
+                    <div className="mt-3 pt-3 border-t border-blue-200 flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-blue-500" />
+                      <span className="text-blue-700">
+                        Próxima fecha de cobro sugerida:
+                        <strong className="ml-1">
+                          {dueDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
