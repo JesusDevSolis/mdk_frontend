@@ -115,11 +115,11 @@ const PagosPage = () => {
     inicializar()
   }, []) // Solo al montar
 
-  // Al cambiar filtros / página / búsqueda
+  // Al cambiar filtros / página / búsqueda / límite
   useEffect(() => {
     loadPagos()
     loadStats()
-  }, [pagination.page, filters, searchTerm])
+  }, [pagination.page, pagination.limit, filters, searchTerm])
 
   // ===== FUNCIONES DE CARGA =====
 
@@ -947,7 +947,7 @@ const PagosPage = () => {
                       }}
                       className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500"
                     >
-                      {[10, 20, 50, 100].map(n => (
+                      {[10, 15, 20, 25, 50, 100].map(n => (
                         <option key={n} value={n}>
                           {n} por página
                         </option>
