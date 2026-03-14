@@ -116,6 +116,14 @@ const PagosPage = () => {
   const loadPagos = async () => {
     try {
       setLoading(true)
+
+      // Paso B — sincronizar status de vencidos antes de cargar
+      try {
+        await pagosAPI.actualizarVencidos()
+      } catch (e) {
+        console.warn('actualizarVencidos:', e.message)
+      }
+
       const params = {
         page: pagination.page,
         limit: pagination.limit,

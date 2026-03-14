@@ -426,6 +426,12 @@ export const pagosAPI = {
     const response = await api.get('/pagos/vencidos', { params })
     return response.data
   },
+
+  // Marcar como vencidos los pagos pendientes con dueDate pasado (Paso B)
+  actualizarVencidos: async () => {
+    const response = await api.post('/pagos/actualizar-vencidos')
+    return response.data
+  },
   
   // Obtener pagos completados
   getCompletados: async (params = {}) => {
