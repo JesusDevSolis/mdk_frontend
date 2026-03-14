@@ -17,14 +17,15 @@ import {
     Trash2,
     Download,
     Tag,
-    Users
+    Users,
+    Banknote
 } from 'lucide-react'
 
 // ✅ NUEVO: Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'
 import PermissionGuard from '../../components/auth/PermissionGuard'
 
-const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
+const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete, onCobrar }) => {
     // ✅ NUEVO: Hook de permisos
     const { canUpdate, canDelete } = usePermissions('pagos')
     
@@ -546,6 +547,20 @@ const PagoDetailsModal = ({ isOpen, onClose, pago, onEdit, onDelete }) => {
             <div className="flex items-center gap-3">
                 {pago.status !== 'pagado' && pago.status !== 'cancelado' && (
                 <>
+                    {/* Botón Cobrar — abre modal unificado */}
+                    <PermissionGuard module="pagos" action="approvePayments">
+                    <button
+                        onClick={() => {
+                            onCobrar && onCobrar(pago)
+                            onClose()
+                        }}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    >
+                        <Banknote className="w-5 h-5" />
+                        Cobrar
+                    </button>
+                    </PermissionGuard>
+
                     {/* ✅ CORREGIDO: Botón Editar - Solo admin */}
                     <PermissionGuard module="pagos" action="update">
                     <button

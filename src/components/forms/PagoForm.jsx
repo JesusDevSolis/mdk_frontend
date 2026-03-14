@@ -15,7 +15,8 @@ import {
   FileText,
   Tag,
   Percent,
-  CreditCard
+  CreditCard,
+  Banknote
 } from 'lucide-react'
 import { pagosAPI, alumnosAPI, tutoresAPI, sucursalesAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
@@ -23,7 +24,7 @@ import toast from 'react-hot-toast'
 // Registrar locale español para el DatePicker
 registerLocale('es', es)
 
-const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) => {
+const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create', onCobrar }) => {
   // Estados principales
   const [loading, setLoading] = useState(false)
   const [alumnos, setAlumnos] = useState([])
@@ -773,6 +774,17 @@ const PagoForm = ({ isOpen, onClose, onSuccess, pago = null, mode = 'create' }) 
 
           {/* Botones */}
           <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
+            {/* Botón Cobrar — solo en modo edición y si no está pagado/cancelado */}
+            {mode === 'edit' && pago && !['pagado', 'cancelado'].includes(pago.status) && onCobrar && (
+              <button
+                type="button"
+                onClick={() => { onCobrar(pago); onClose() }}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Banknote className="w-5 h-5" />
+                Cobrar
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

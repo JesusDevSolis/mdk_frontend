@@ -496,6 +496,19 @@ export const pagosAPI = {
   cancelPayment: async (id, reason) => {
     const response = await api.put(`/pagos/${id}/cancelar`, { reason })
     return response.data
+  },
+
+  // Descargar recibo PDF con autenticación (blob → nueva pestaña)
+  getReciboPDF: async (id) => {
+    const response = await api.get(`/pagos/${id}/recibo`, {
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(
+      new Blob([response.data], { type: 'application/pdf' })
+    )
+    window.open(url, '_blank')
+    // Liberar memoria después de abrir
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000)
   }
 }
 

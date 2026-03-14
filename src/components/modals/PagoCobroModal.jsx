@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react'
 import {
   X, Upload, CheckCircle, CreditCard, Calendar,
-  FileText, AlertCircle, Loader, DollarSign, Clock
+  FileText, AlertCircle, Loader, DollarSign, Clock, FileDown
 } from 'lucide-react'
 import { pagosAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
@@ -29,6 +29,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
   const [dragOver, setDragOver]             = useState(false)
   const [loading, setLoading]               = useState(false)
   const [errors, setErrors]                 = useState({})
+  const [pagoIdCobrado, setPagoIdCobrado]   = useState(null)
   const fileRef = useRef()
 
   // Todos los hooks ANTES del return condicional
@@ -91,7 +92,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
     }
     setLoading(true)
     try {
-      await pagosAPI.cobrarConComprobante(pago._id, {
+      const result = await pagosAPI.cobrarConComprobante(pago._id, {
         paymentMethod,
         paidDate,
         paymentReference : reference,
@@ -99,6 +100,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
         aplicarRecargo,
         comprobanteFile  : file
       })
+      setPagoIdCobrado(pago._id)
       setStep(3)
       if (onSuccess) onSuccess()
     } catch (error) {
@@ -113,6 +115,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
     setStep(1); setPaymentMethod(''); setReference(''); setNotes('')
     setFile(null); setPreview(null); setErrors({}); setAplicarRecargo(true)
     setPaidDate(new Date().toISOString().split('T')[0])
+    setPagoIdCobrado(null)
     onClose()
   }
 
@@ -358,7 +361,24 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
               <p className="text-2xl font-bold text-green-600 mt-3">
                 ${montoBase.toLocaleString('es-MX')} MXN
               </p>
-              <p className="text-xs text-gray-400 mt-1">Comprobante adjuntado correctamente</p>
+              <p className="text-xs text-gray-400 mt-1 mb-5">Comprobante adjuntado correctamente</p>
+
+              {/* Botón descargar recibo */}
+              {pagoIdCobrado && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await pagosAPI.getReciboPDF(pagoIdCobrado)
+                    } catch (e) {
+                      toast.error('Error al generar el recibo')
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition-colors shadow"
+                >
+                  <FileDown className="w-4 h-4" />
+                  Descargar recibo PDF
+                </button>
+              )}
             </div>
           )}
         </div>
