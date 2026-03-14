@@ -151,10 +151,11 @@ const AlumnoForm = ({
         monthlyFee: '',
         registrationFee: '',
         // ── v1.5: campos nuevos de matrícula ──
-        programa: '',
+        programa: [],
         enrollmentReason: '',
         recommendedBy: '',
         observaciones: '',
+        paymentDay: 15,
         // ──────────────────────────────────────
       },
       belt: {
@@ -295,10 +296,13 @@ const AlumnoForm = ({
       setValue('enrollment.registrationFee', alumno.enrollment?.registrationFee || 0)
       
       // ✅ v1.5: CARGAR CAMPOS NUEVOS DE MATRÍCULA
-      setValue('enrollment.programa',         alumno.enrollment?.programa         || '')
+      setValue('enrollment.programa', Array.isArray(alumno.enrollment?.programa)
+        ? alumno.enrollment.programa
+        : alumno.enrollment?.programa ? [alumno.enrollment.programa] : [])
       setValue('enrollment.enrollmentReason', alumno.enrollment?.enrollmentReason || '')
       setValue('enrollment.recommendedBy',    alumno.enrollment?.recommendedBy    || '')
       setValue('enrollment.observaciones',    alumno.enrollment?.observaciones    || '')
+      setValue('enrollment.paymentDay',       alumno.enrollment?.paymentDay       ?? 15)
       
       // ✅ CARGAR CINTURÓN - CALENDARIO MEJORADO
       setValue('belt.level', alumno.belt?.level || 'blanco')
@@ -551,7 +555,9 @@ const AlumnoForm = ({
   if (!isOpen) return null
 
   // v1.5: detectar si la disciplina es Pequeños Dragones
-  const isPequenoDragon = watchPrograma === 'pequenos-dragones'
+  const isPequenoDragon = Array.isArray(watchPrograma)
+    ? watchPrograma.includes('pequenos-dragones')
+    : watchPrograma === 'pequenos-dragones'
 
   return (
     <>
@@ -717,39 +723,42 @@ const AlumnoForm = ({
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[calc(90vh-140px)]">
               
-              {/* ✅ DISCIPLINA / PROGRAMA - v1.5 - VA PRIMERO */}
+              {/* ✅ DISCIPLINA / PROGRAMA - v1.5 - múltiple selección */}
               <div className="bg-gradient-to-r from-primary-50 to-indigo-50 rounded-lg p-5 border-2 border-primary-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
                   <Dumbbell className="w-5 h-5 text-primary-600" />
                   Disciplina / Programa
                   <span className="text-red-500">*</span>
                 </h3>
+                <p className="text-xs text-gray-500 mb-4">Puedes seleccionar una o varias disciplinas</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                   {PROGRAMA_OPTIONS.map(prog => {
-                    const isSelected = watchPrograma === prog.value
+                    const selected = Array.isArray(watchPrograma)
+                      ? watchPrograma.includes(prog.value)
+                      : watchPrograma === prog.value
                     return (
                       <label
                         key={prog.value}
                         className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all select-none
-                          ${isSelected
+                          ${selected
                             ? 'border-primary-500 bg-primary-50 shadow-md ring-2 ring-primary-300'
                             : 'border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50'
                           }`}
                       >
                         <input
-                          type="radio"
+                          type="checkbox"
                           value={prog.value}
                           className="sr-only"
                           {...register('enrollment.programa', {
-                            required: 'Selecciona una disciplina'
+                            validate: v => (Array.isArray(v) ? v.length > 0 : !!v) || 'Selecciona al menos una disciplina'
                           })}
                         />
                         <span className="text-2xl">{prog.emoji}</span>
                         <span className={`text-xs font-semibold text-center leading-tight
-                          ${isSelected ? 'text-primary-700' : 'text-gray-600'}`}>
+                          ${selected ? 'text-primary-700' : 'text-gray-600'}`}>
                           {prog.label}
                         </span>
-                        {isSelected && (
+                        {selected && (
                           <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
                             <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -1566,6 +1575,21 @@ const AlumnoForm = ({
                       step="0.01"
                       {...register('enrollment.registrationFee')}
                     />
+                  </div>
+
+                  {/* ── Día de pago mensual ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Día de pago mensual
+                    </label>
+                    <select className="input-field" {...register('enrollment.paymentDay', { valueAsNumber: true })}>
+                      {[1, 5, 10, 15, 20, 25, 30].map(d => (
+                        <option key={d} value={d}>Día {d}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Fecha fija en que se generan los cobros mensuales
+                    </p>
                   </div>
 
                   {/* ── v1.5: Motivo de inscripción ── */}
