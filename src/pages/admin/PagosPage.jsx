@@ -20,6 +20,7 @@ import {
   ChevronUp,
   ClipboardCheck, 
   CheckCircle2,
+  Zap,
 } from 'lucide-react'
 import { pagosAPI, alumnosAPI, sucursalesAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
@@ -46,6 +47,7 @@ const PagosPage = () => {
   // Estados principales
   const [pagos, setPagos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [generandoMensualidades, setGenerandoMensualidades] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -184,6 +186,31 @@ const PagosPage = () => {
   }
 
   // ===== HANDLERS =====
+
+  // Paso C — generar mensualidades faltantes para todos los alumnos activos
+  const handleGenerarMensualidades = async () => {
+    if (!window.confirm(
+      '¿Generar mensualidades faltantes para todos los alumnos activos?\n\n' +
+      'Esto creará los pagos de colegiatura de los meses no registrados ' +
+      'desde la fecha de inscripción de cada alumno hasta hoy.'
+    )) return
+
+    setGenerandoMensualidades(true)
+    try {
+      const result = await pagosAPI.generarMensualidadesBulk()
+      if (result.success) {
+        toast.success(result.message)
+        loadPagos()
+      } else {
+        toast.error(result.message || 'Error al generar mensualidades')
+      }
+    } catch (error) {
+      toast.error('Error al generar mensualidades')
+      console.error(error)
+    } finally {
+      setGenerandoMensualidades(false)
+    }
+  }
 
   const handleCreate = () => {
     setSelectedPago(null)
@@ -385,14 +412,29 @@ const PagosPage = () => {
           <p className="text-gray-600 mt-1">Administra los pagos de colegiaturas, uniformes y más</p>
         </div>
         
-        {/* ✅ CORREGIDO: Botón de crear con permisos */}
-        <CreateButton 
-          module="pagos"
-          onClick={handleCreate}
-          icon={<Plus className="w-5 h-5" />}
-        >
-          Registrar Pago
-        </CreateButton>
+        <div className="flex items-center gap-3">
+          {/* Paso C — Generar mensualidades faltantes */}
+          <button
+            onClick={handleGenerarMensualidades}
+            disabled={generandoMensualidades}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
+            title="Genera los pagos de colegiatura faltantes para todos los alumnos activos"
+          >
+            {generandoMensualidades
+              ? <><span className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />Generando...</>
+              : <><Zap className="w-4 h-4" />Generar Mensualidades</>
+            }
+          </button>
+
+          {/* Botón de crear con permisos */}
+          <CreateButton 
+            module="pagos"
+            onClick={handleCreate}
+            icon={<Plus className="w-5 h-5" />}
+          >
+            Registrar Pago
+          </CreateButton>
+        </div>
       </div>
 
       {/* Estadísticas */}

@@ -432,6 +432,18 @@ export const pagosAPI = {
     const response = await api.post('/pagos/actualizar-vencidos')
     return response.data
   },
+
+  // Generar mensualidades para un alumno específico (Paso C)
+  generarMensualidades: async (alumnoId) => {
+    const response = await api.post(`/pagos/generar-mensualidades/${alumnoId}`)
+    return response.data
+  },
+
+  // Generar mensualidades para todos los alumnos activos (Paso C - bulk)
+  generarMensualidadesBulk: async () => {
+    const response = await api.post('/pagos/generar-mensualidades')
+    return response.data
+  },
   
   // Obtener pagos completados
   getCompletados: async (params = {}) => {
