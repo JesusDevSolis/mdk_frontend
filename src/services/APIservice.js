@@ -476,6 +476,21 @@ export const pagosAPI = {
     const response = await api.put(`/pagos/${id}/marcar-pagado`, paymentData)
     return response.data
   },
+
+  // Cobrar + comprobante en un solo paso
+  cobrarConComprobante: async (id, { paymentMethod, paidDate, paymentReference, notes, aplicarRecargo, comprobanteFile }) => {
+    const formData = new FormData()
+    formData.append('comprobante',      comprobanteFile)
+    formData.append('paymentMethod',    paymentMethod)
+    formData.append('paidDate',         paidDate || new Date().toISOString())
+    if (paymentReference) formData.append('paymentReference', paymentReference)
+    if (notes)            formData.append('notes',            notes)
+    formData.append('aplicarRecargo', aplicarRecargo !== false ? 'true' : 'false')
+    const response = await api.post(`/pagos/${id}/cobrar`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+  },
   
   // Cancelar pago
   cancelPayment: async (id, reason) => {

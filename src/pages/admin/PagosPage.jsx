@@ -27,6 +27,7 @@ import toast from 'react-hot-toast'
 import PagoForm from '../../components/forms/PagoForm'
 import PagoDetailsModal from '../../components/modals/PagoDetailsModal'
 import ComprobanteUploadModal from '../../components/modals/ComprobanteUploadModal'
+import PagoCobroModal from '../../components/modals/PagoCobroModal'
 
 // ✅ NUEVO: Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'
@@ -51,6 +52,8 @@ const PagosPage = () => {
   const [showForm, setShowForm] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showCobroModal, setShowCobroModal]   = useState(false)
+  const [pagoACobrar, setPagoACobrar]         = useState(null)
   const [selectedPago, setSelectedPago] = useState(null)
   const [formMode, setFormMode] = useState('create')
 
@@ -165,11 +168,9 @@ const PagosPage = () => {
       const response = await pagosAPI.getStats()
       
       // ✅ CORREGIDO: Transformar respuesta del backend
-      // Backend devuelve: { data: { general: { total, totalAmount, byStatus: {...} }, byType: [...], byMonth: [...] } }
       const general = response.data?.general || {}
       const byStatus = general.byStatus || {}
       
-      // Transformar a la estructura que espera el frontend
       setStats({
         total: general.total || 0,
         pagado: byStatus.pagado?.count || 0,
@@ -250,27 +251,10 @@ const PagosPage = () => {
     }
   }
 
-  const handleMarkAsPaid = async (pago) => {
-    if (!window.confirm(`¿Marcar como pagado el pago de ${pago.alumno?.firstName}?`)) {
-      return
-    }
-
-    try {
-      const paymentMethod = prompt('Método de pago (efectivo/tarjeta/transferencia/cheque):')
-      if (!paymentMethod) return
-
-      await pagosAPI.markAsPaid(pago._id, {
-        paymentMethod,
-        paidDate: new Date().toISOString()
-      })
-      
-      toast.success('Pago marcado como pagado')
-      loadPagos()
-      loadStats()
-    } catch (error) {
-      console.error('Error al marcar como pagado:', error)
-      toast.error(error.response?.data?.message || 'Error al marcar el pago')
-    }
+  // Abre el modal unificado de cobro + comprobante
+  const handleMarkAsPaid = (pago) => {
+    setPagoACobrar(pago)
+    setShowCobroModal(true)
   }
 
   const handleFormSuccess = () => {
@@ -781,12 +765,25 @@ const PagosPage = () => {
                                 <button
                                   onClick={() => handleMarkAsPaid(pago)}
                                   className="text-green-600 hover:text-green-900"
-                                  title="Marcar como pagado"
+                                  title="Registrar cobro"
                                 >
                                   <CheckCircle className="w-5 h-5" />
                                 </button>
                               </PermissionGuard>
                             </>
+                          )}
+
+                          {/* Registrar cobro para vencidos también */}
+                          {pago.status === 'vencido' && (
+                            <PermissionGuard module="pagos" action="approvePayments">
+                              <button
+                                onClick={() => handleMarkAsPaid(pago)}
+                                className="text-green-600 hover:text-green-900"
+                                title="Registrar cobro"
+                              >
+                                <CheckCircle className="w-5 h-5" />
+                              </button>
+                            </PermissionGuard>
                           )}
                           
                           {/* Subir comprobante - Admin e Instructor */}
@@ -852,7 +849,6 @@ const PagosPage = () => {
                   </div>
 
                   <div className="mt-3 flex items-center justify-end gap-2">
-                    {/* Ver detalles - Siempre visible */}
                     <button
                       onClick={() => handleView(pago)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
@@ -860,8 +856,7 @@ const PagosPage = () => {
                       <Eye className="w-5 h-5" />
                     </button>
                     
-                    {/* ✅ CORREGIDO: Botones mobile con permisos */}
-                    {pago.status === 'pendiente' && (
+                    {(pago.status === 'pendiente' || pago.status === 'vencido') && (
                       <>
                         <PermissionGuard module="pagos" action="update">
                           <button
@@ -1011,8 +1006,8 @@ const PagosPage = () => {
           isOpen={showDetails}
           onClose={() => setShowDetails(false)}
           pago={selectedPago}
-          onEdit={handleEdit}  // ✅ AGREGADO
-          onDelete={handleDelete}  // ✅ AGREGADO
+          onEdit={handleEdit}
+          onDelete={handleDelete}
           configuraciones={configuraciones}
         />
       )}
@@ -1025,6 +1020,14 @@ const PagosPage = () => {
           pago={selectedPago}
         />
       )}
+
+      {/* Modal unificado de cobro + comprobante */}
+      <PagoCobroModal
+        isOpen={showCobroModal}
+        pago={pagoACobrar}
+        onClose={() => { setShowCobroModal(false); setPagoACobrar(null) }}
+        onSuccess={() => { loadPagos(); loadStats() }}
+      />
     </div>
   )
 }
