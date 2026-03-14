@@ -935,11 +935,12 @@ const AlumnoForm = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email
+                      Email <span className="text-gray-400 text-xs font-normal">(opcional)</span>
                     </label>
                     <input
                       type="email"
                       className="input-field"
+                      placeholder="correo@ejemplo.com"
                       {...register('email', {
                         pattern: {
                           value: /^\S+@\S+$/i,
