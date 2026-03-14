@@ -499,6 +499,12 @@ const AlumnoForm = ({
       
       // Remover datos del nuevo tutor del payload
       delete formData.newTutor
+
+      // Sanitizar emails vacíos → undefined (el backend requiere valor válido o nada)
+      if (!formData.email || formData.email.trim() === '') delete formData.email
+      if (!formData.emergencyContact?.email || formData.emergencyContact.email.trim() === '') {
+        if (formData.emergencyContact) delete formData.emergencyContact.email
+      }
       
       console.log('🎯 Datos del alumno a enviar:', formData)
       console.log('🎯 Estructura completa:', JSON.stringify(formData, null, 2))
