@@ -500,11 +500,18 @@ const AlumnoForm = ({
       // Remover datos del nuevo tutor del payload
       delete formData.newTutor
 
-      // Sanitizar emails vacíos → undefined (el backend requiere valor válido o nada)
+      // Sanitizar emails vacíos → eliminar el campo
       if (!formData.email || formData.email.trim() === '') delete formData.email
       if (!formData.emergencyContact?.email || formData.emergencyContact.email.trim() === '') {
         if (formData.emergencyContact) delete formData.emergencyContact.email
       }
+
+      // Sanitizar campos con enum — "" no es valor válido en Mongoose enums
+      // Convertir strings vacíos a undefined para que el modelo use su default o lo ignore
+      const enumFields = ['gender', 'maritalStatus']
+      enumFields.forEach(f => { if (formData[f] === '') delete formData[f] })
+      if (formData.medicalInfo?.bloodType === '') delete formData.medicalInfo.bloodType
+      if (formData.gradeLevel === '') delete formData.gradeLevel
       
       console.log('🎯 Datos del alumno a enviar:', formData)
       console.log('🎯 Estructura completa:', JSON.stringify(formData, null, 2))
