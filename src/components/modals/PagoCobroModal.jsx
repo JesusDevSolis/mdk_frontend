@@ -6,7 +6,6 @@ import {
 import { pagosAPI } from '../../services/APIservice'
 import toast from 'react-hot-toast'
 
-// Etiquetas de método de pago
 const METODOS = [
   { value: 'efectivo',      label: 'Efectivo',       icon: '💵' },
   { value: 'transferencia', label: 'Transferencia',  icon: '🏦' },
@@ -18,22 +17,21 @@ const METODOS = [
 const MESES = ['', 'Enero','Febrero','Marzo','Abril','Mayo','Junio',
                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
-// ─────────────────────────────────────────────────────────────────────────────
 const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
-  const [step, setStep]                 = useState(1)   // 1=método, 2=comprobante, 3=éxito
-  const [paymentMethod, setPaymentMethod] = useState('')
-  const [paidDate, setPaidDate]         = useState(new Date().toISOString().split('T')[0])
-  const [reference, setReference]       = useState('')
-  const [notes, setNotes]               = useState('')
+  const [step, setStep]                     = useState(1)
+  const [paymentMethod, setPaymentMethod]   = useState('')
+  const [paidDate, setPaidDate]             = useState(new Date().toISOString().split('T')[0])
+  const [reference, setReference]           = useState('')
+  const [notes, setNotes]                   = useState('')
   const [aplicarRecargo, setAplicarRecargo] = useState(true)
-  const [file, setFile]                 = useState(null)
-  const [preview, setPreview]           = useState(null)
-  const [dragOver, setDragOver]         = useState(false)
-  const [loading, setLoading]           = useState(false)
-  const [errors, setErrors]             = useState({})
+  const [file, setFile]                     = useState(null)
+  const [preview, setPreview]               = useState(null)
+  const [dragOver, setDragOver]             = useState(false)
+  const [loading, setLoading]               = useState(false)
+  const [errors, setErrors]                 = useState({})
   const fileRef = useRef()
 
-  // ── Manejo de archivo ───────────────────────────────────────────────────
+  // Todos los hooks ANTES del return condicional
   const handleFile = useCallback((f) => {
     if (!f) return
     const allowed = ['image/jpeg','image/jpg','image/png','image/webp','application/pdf']
@@ -62,10 +60,9 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
     handleFile(e.dataTransfer.files[0])
   }, [handleFile])
 
-  // ── Early return DESPUÉS de todos los hooks ──────────────────────────────
+  // Early return DESPUÉS de todos los hooks
   if (!isOpen || !pago) return null
 
-  // ── Datos del pago ──────────────────────────────────────────────────────
   const alumnoNombre = [
     pago.alumno?.firstName,
     pago.alumno?.lastName,
@@ -78,30 +75,15 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
 
   const estaVencido = pago.status === 'vencido'
   const montoBase   = pago.amount || 0
-      setErrors(e => ({ ...e, file: 'El archivo no puede exceder 5MB' }))
-      return
-    }
-    setErrors(e => ({ ...e, file: null }))
-    setFile(f)
-    if (f.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = ev => setPreview(ev.target.result)
-      reader.readAsDataURL(f)
-    } else {
-      setPreview('pdf')
-    }
-  }, [])
 
-  // ── Validar paso 1 ──────────────────────────────────────────────────────
   const validarPaso1 = () => {
     const errs = {}
-    if (!paymentMethod)  errs.paymentMethod = 'Selecciona el método de pago'
-    if (!paidDate)       errs.paidDate      = 'La fecha de pago es requerida'
+    if (!paymentMethod) errs.paymentMethod = 'Selecciona el método de pago'
+    if (!paidDate)      errs.paidDate      = 'La fecha de pago es requerida'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  // ── Enviar ──────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!file) {
       setErrors(e => ({ ...e, file: 'El comprobante es obligatorio' }))
@@ -134,7 +116,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
     onClose()
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col">
@@ -154,7 +135,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
         {step < 3 && (
           <div className="flex border-b border-gray-100">
             {['Método de pago', 'Comprobante'].map((label, i) => {
-              const n = i + 1
+              const n      = i + 1
               const active = step === n
               const done   = step > n
               return (
@@ -174,7 +155,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
 
-          {/* ── Info del pago ── */}
+          {/* Info del pago */}
           {step < 3 && (
             <div className="bg-gray-50 rounded-xl p-4 mb-5 flex items-start gap-4">
               <DollarSign className="w-9 h-9 text-gray-500 bg-white rounded-lg p-2 shadow-sm flex-shrink-0" />
@@ -195,10 +176,9 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
             </div>
           )}
 
-          {/* ══ PASO 1: Método de pago ══ */}
+          {/* PASO 1: Método de pago */}
           {step === 1 && (
             <div className="space-y-5">
-              {/* Método */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Método de pago <span className="text-red-500">*</span>
@@ -225,7 +205,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 )}
               </div>
 
-              {/* Fecha */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
@@ -243,7 +222,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 )}
               </div>
 
-              {/* Referencia */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <CreditCard className="w-4 h-4 inline mr-1" />
@@ -258,7 +236,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 />
               </div>
 
-              {/* Recargo */}
               {estaVencido && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -278,7 +255,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 </div>
               )}
 
-              {/* Notas */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <FileText className="w-4 h-4 inline mr-1" />
@@ -295,7 +271,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
             </div>
           )}
 
-          {/* ══ PASO 2: Comprobante ══ */}
+          {/* PASO 2: Comprobante */}
           {step === 2 && (
             <div className="space-y-4">
               <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
@@ -303,7 +279,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 <span>El comprobante es <strong>obligatorio</strong> para finalizar el registro. Acepta JPG, PNG, WEBP o PDF (máx. 5MB).</span>
               </div>
 
-              {/* Zona de drop */}
               <div
                 onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
@@ -345,7 +320,6 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 </p>
               )}
 
-              {/* Resumen antes de confirmar */}
               <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1.5">
                 <h4 className="font-semibold text-gray-700 mb-2">Resumen del cobro</h4>
                 <div className="flex justify-between">
@@ -354,7 +328,9 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Fecha de pago</span>
-                  <span className="font-medium">{new Date(paidDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  <span className="font-medium">
+                    {new Date(paidDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
                 </div>
                 {reference && (
                   <div className="flex justify-between">
@@ -370,7 +346,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
             </div>
           )}
 
-          {/* ══ PASO 3: Éxito ══ */}
+          {/* PASO 3: Éxito */}
           {step === 3 && (
             <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
