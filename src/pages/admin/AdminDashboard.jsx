@@ -30,6 +30,7 @@ import AsistenciasPage from './AsistenciasPage'
 import InstructoresPage from './InstructoresPage'
 import ExamenesPage from './ExamenesPage'
 import ConfiguracionPage from './ConfiguracionPage'
+import TutoresPage from './TutoresPage'
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home, current: location.pathname === '/admin' },
     { name: 'Alumnos', href: '/admin/alumnos', icon: Users, current: location.pathname.startsWith('/admin/alumnos') },
+    { name: 'Tutores', href: '/admin/tutores', icon: UserCheck, current: location.pathname.startsWith('/admin/tutores') },
     { name: 'Sucursales', href: '/admin/sucursales', icon: Building2, current: location.pathname.startsWith('/admin/sucursales') },
     { name: 'Horarios', href: '/admin/horarios', icon: Calendar, current: location.pathname.startsWith('/admin/horarios') },
     { name: 'Pagos', href: '/admin/pagos', icon: CreditCard, current: location.pathname.startsWith('/admin/pagos') },
@@ -218,6 +220,7 @@ const AdminDashboard = () => {
             <Routes>
               <Route index element={<DashboardHome />} />
               <Route path="alumnos" element={<AlumnosPage />} />
+              <Route path="tutores" element={<TutoresPage />} />
               <Route path="sucursales" element={<SucursalesPage />} />
               <Route path="horarios" element={<HorariosPage />} />
               <Route path="pagos" element={<PagosPage />} />

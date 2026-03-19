@@ -79,12 +79,14 @@ const AlumnoForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitted },
     reset,
     setValue,
     watch,
     getValues
   } = useForm({
+    mode: 'onTouched',        // valida al salir del campo
+    criteriaMode: 'firstError', // muestra el primer error por campo
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -345,13 +347,15 @@ const AlumnoForm = ({
       console.log('🚀 Datos del tutor a enviar (original):', tutorData)
       
       // Limpiar y estructurar datos según el modelo Tutor.js
+      const idNumber = tutorData.identification?.number?.trim()
       const formattedTutorData = {
         firstName: tutorData.firstName,
         lastName: tutorData.lastName,
         email: tutorData.email,
+        // Solo incluir identification.number si tiene valor real
         identification: {
           type: tutorData.identification?.type || 'ine',
-          number: tutorData.identification?.number || ''
+          ...(idNumber ? { number: idNumber } : {})
         },
         phones: {
           primary: tutorData.phones?.primary || '',
@@ -377,31 +381,32 @@ const AlumnoForm = ({
       const response = await tutoresAPI.create(formattedTutorData)
       
       if (response.success) {
-        console.log('✅ Tutor creado exitosamente:', response.data)
-        toast.success('Tutor creado exitosamente')
-        await loadInitialData() // Recargar lista de tutores
+        if (response.recovered) {
+          // El tutor ya existía — lo recuperamos silenciosamente
+          toast.success('Tutor encontrado y asignado correctamente')
+        } else {
+          toast.success('Tutor creado exitosamente')
+        }
+        await loadInitialData()
         return response.data.tutor
       } else {
         throw new Error(response.message || 'Error creando tutor')
       }
     } catch (error) {
-      console.error('❌ Error completo creando tutor:', error)
-      console.error('❌ Respuesta completa del servidor:', error.response?.data)
-      console.error('❌ Detalles del error del servidor:', error.response?.data)
+      const serverMsg = error.response?.data?.message
+      
+      // Mostrar mensaje claro del servidor si existe
+      if (serverMsg) {
+        toast.error(serverMsg)
+        throw new Error(serverMsg)
+      }
       
       if (error.response?.data?.errors) {
-        console.error('🔍 ERRORES ESPECÍFICOS:', error.response.data.errors)
-        error.response.data.errors.forEach((err, index) => {
-          console.error(`🔍 Error ${index + 1}:`, err)
-          console.error(`🔍 Mensaje del error:`, err.message)
-          console.error(`🔍 Campo con error:`, err.field)
-          console.error(`🔍 Valor enviado:`, err.value)
-        })
-        
         const errorMessages = error.response.data.errors
-          .map(err => `Campo: ${err.field} - ${err.message}`)
-          .join('\n')
-        throw new Error(`Errores específicos: ${errorMessages}`)
+          .map(err => err.message)
+          .join(', ')
+        toast.error(errorMessages)
+        throw new Error(errorMessages)
       }
       
       throw new Error(error.response?.data?.message || error.message || 'Error desconocido creando tutor')
@@ -467,7 +472,7 @@ const AlumnoForm = ({
           const newTutor = await createNewTutor(data.newTutor)
           tutorId = newTutor._id
         } catch (error) {
-          toast.error('Error creando el tutor. Revise la consola para más detalles.')
+          // createNewTutor ya mostró toast con el mensaje específico — no duplicar
           return
         }
       } else if (isMinor && tutorMode === 'existing') {
@@ -1374,13 +1379,17 @@ const AlumnoForm = ({
                     </label>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${errors.emergencyContact?.name ? 'border-red-500 bg-red-50' : ''}`}
+                      placeholder="Nombre completo del contacto"
                       {...register('emergencyContact.name', {
                         required: 'El nombre del contacto de emergencia es requerido'
                       })}
                     />
                     {errors.emergencyContact?.name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.name.message}</p>
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.emergencyContact.name.message}
+                      </p>
                     )}
                   </div>
 
@@ -1390,14 +1399,17 @@ const AlumnoForm = ({
                     </label>
                     <input
                       type="text"
-                      className="input-field"
+                      className={`input-field ${errors.emergencyContact?.relationship ? 'border-red-500 bg-red-50' : ''}`}
                       placeholder="Ej: Padre, Madre, Tío, etc."
                       {...register('emergencyContact.relationship', {
-                        required: 'La relación es requerida'
+                        required: 'La relación con el alumno es requerida'
                       })}
                     />
                     {errors.emergencyContact?.relationship && (
-                      <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.relationship.message}</p>
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.emergencyContact.relationship.message}
+                      </p>
                     )}
                   </div>
 
@@ -1407,13 +1419,18 @@ const AlumnoForm = ({
                     </label>
                     <input
                       type="tel"
-                      className="input-field"
+                      className={`input-field ${errors.emergencyContact?.phone ? 'border-red-500 bg-red-50' : ''}`}
+                      placeholder="10 dígitos"
                       {...register('emergencyContact.phone', {
-                        required: 'El teléfono es requerido'
+                        required: 'El teléfono del contacto es requerido',
+                        minLength: { value: 10, message: 'Mínimo 10 dígitos' }
                       })}
                     />
                     {errors.emergencyContact?.phone && (
-                      <p className="text-red-500 text-sm mt-1">{errors.emergencyContact.phone.message}</p>
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.emergencyContact.phone.message}
+                      </p>
                     )}
                   </div>
 
@@ -1664,9 +1681,12 @@ const AlumnoForm = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nivel actual
+                      Nivel actual <span className="text-red-500">*</span>
                     </label>
-                    <select className="input-field" {...register('belt.level')}>
+                    <select
+                      className={`input-field ${errors.belt?.level ? 'border-red-500' : ''}`}
+                      {...register('belt.level', { required: 'El nivel de cinturón es requerido' })}
+                    >
                       <option value="blanco">Blanco</option>
                       <option value="blanco-amarillo">Blanco-Amarillo</option>
                       <option value="amarillo">Amarillo</option>
@@ -1683,12 +1703,15 @@ const AlumnoForm = ({
                       <option value="negro-2">Negro 2° Dan</option>
                       <option value="negro-3">Negro 3° Dan</option>
                     </select>
+                    {errors.belt?.level && (
+                      <p className="text-red-500 text-sm mt-1">{errors.belt.level.message}</p>
+                    )}
                   </div>
 
                   {/* CALENDARIO MEJORADO PARA FECHA DE OBTENCIÓN DEL CINTURÓN */}
                   <div className="calendar-input">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fecha de obtención
+                      Fecha de obtención <span className="text-red-500">*</span>
                     </label>
                     <div className="custom-datepicker">
                       <DatePicker
@@ -1743,13 +1766,21 @@ const AlumnoForm = ({
                       type="hidden"
                       {...register('belt.dateObtained')}
                     />
+                    {errors.belt?.dateObtained && (
+                      <p className="text-red-500 text-sm mt-1">{errors.belt.dateObtained.message}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Certificado por
+                      Certificado por <span className="text-red-500">*</span>
                     </label>
-                    <select className="input-field" {...register('belt.certifiedBy')}>
+                    <select
+                      className={`input-field ${errors.belt?.certifiedBy ? 'border-red-500' : ''}`}
+                      {...register('belt.certifiedBy', {
+                        required: 'El instructor certificador es requerido'
+                      })}
+                    >
                       <option value="">Seleccionar instructor...</option>
                       {instructores.map(instructor => (
                         <option key={instructor._id} value={instructor._id}>
@@ -1757,6 +1788,9 @@ const AlumnoForm = ({
                         </option>
                       ))}
                     </select>
+                    {errors.belt?.certifiedBy && (
+                      <p className="text-red-500 text-sm mt-1">{errors.belt.certifiedBy.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1816,6 +1850,29 @@ const AlumnoForm = ({
             </div>
 
             {/* Footer con botones */}
+            {/* Banner de errores — visible al intentar guardar con campos inválidos */}
+            {isSubmitted && Object.keys(errors).length > 0 && (
+              <div className="mx-6 mb-3 p-3 bg-red-50 border border-red-300 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-red-700">Hay campos obligatorios sin completar:</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {errors.firstName && <li className="text-xs text-red-600">• Nombre</li>}
+                    {errors.lastName && <li className="text-xs text-red-600">• Apellido Paterno</li>}
+                    {errors.gender && <li className="text-xs text-red-600">• Género</li>}
+                    {errors.dateOfBirth && <li className="text-xs text-red-600">• Fecha de Nacimiento</li>}
+                    {errors.emergencyContact?.name && <li className="text-xs text-red-600">• Nombre del contacto de emergencia</li>}
+                    {errors.emergencyContact?.relationship && <li className="text-xs text-red-600">• Relación del contacto de emergencia</li>}
+                    {errors.emergencyContact?.phone && <li className="text-xs text-red-600">• Teléfono del contacto de emergencia</li>}
+                    {errors['enrollment']?.sucursal && <li className="text-xs text-red-600">• Sucursal</li>}
+                    {errors['enrollment']?.programa && <li className="text-xs text-red-600">• Disciplina / Programa</li>}
+                    {errors.belt?.level && <li className="text-xs text-red-600">• Nivel de cinturón</li>}
+                    {errors.belt?.certifiedBy && <li className="text-xs text-red-600">• Instructor certificador</li>}
+                  </ul>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
               <button
                 type="button"
