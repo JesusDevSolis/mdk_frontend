@@ -401,18 +401,18 @@ const EnvioModal = ({ isOpen, notificacion, onClose, onSuccess }) => {
 
         <div className="border-t border-gray-100 px-6 py-4 flex justify-between bg-gray-50 rounded-b-2xl">
           <button onClick={onClose} className="btn-secondary">Cerrar</button>
-          {notificacion.estado !== 'enviada' && notificacion.estado !== 'cancelada' && (
-            <button
-              onClick={handleEnviar}
-              disabled={loading}
-              className="btn-primary flex items-center gap-2 bg-green-600 hover:bg-green-700"
-            >
-              {loading
-                ? <><Loader className="w-4 h-4 animate-spin" />Enviando...</>
+          <button
+            onClick={handleEnviar}
+            disabled={loading}
+            className="btn-primary flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            {loading
+              ? <><Loader className="w-4 h-4 animate-spin" />Enviando...</>
+              : notificacion.estado === 'enviada'
+                ? <><Send className="w-4 h-4" />Reenviar</>
                 : <><Send className="w-4 h-4" />Enviar ahora</>
-              }
-            </button>
-          )}
+            }
+          </button>
         </div>
       </div>
     </div>
@@ -634,22 +634,19 @@ const NotificacionesPage = () => {
                             className="text-blue-600 hover:text-blue-900" title="Ver detalles">
                             <Eye className="w-5 h-5" />
                           </button>
-                          {item.estado !== 'enviada' && (
-                            <>
-                              <button onClick={() => { setSelected(item); setModalForm(true) }}
-                                className="text-yellow-600 hover:text-yellow-900" title="Editar">
-                                <Edit className="w-5 h-5" />
-                              </button>
-                              <button onClick={() => { setSelected(item); setModalEnvio(true) }}
-                                className="text-green-600 hover:text-green-900" title="Enviar">
-                                <Send className="w-5 h-5" />
-                              </button>
-                              <button onClick={() => handleDelete(item)}
-                                className="text-red-500 hover:text-red-700" title="Eliminar">
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </>
-                          )}
+                          <button onClick={() => { setSelected(item); setModalForm(true) }}
+                            className="text-yellow-600 hover:text-yellow-900" title="Editar">
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => { setSelected(item); setModalEnvio(true) }}
+                            className="text-green-600 hover:text-green-900"
+                            title={item.estado === 'enviada' ? 'Reenviar' : 'Enviar'}>
+                            <Send className="w-5 h-5" />
+                          </button>
+                          <button onClick={() => handleDelete(item)}
+                            className="text-red-500 hover:text-red-700" title="Eliminar">
+                            <Trash2 className="w-5 h-5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -678,22 +675,19 @@ const NotificacionesPage = () => {
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded">
                       <Eye className="w-4 h-4" />
                     </button>
-                    {item.estado !== 'enviada' && (
-                      <>
-                        <button onClick={() => { setSelected(item); setModalForm(true) }}
-                          className="p-2 text-yellow-600 hover:bg-yellow-50 rounded">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { setSelected(item); setModalEnvio(true) }}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded">
-                          <Send className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(item)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
+                    <button onClick={() => { setSelected(item); setModalForm(true) }}
+                      className="p-2 text-yellow-600 hover:bg-yellow-50 rounded">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => { setSelected(item); setModalEnvio(true) }}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded"
+                      title={item.estado === 'enviada' ? 'Reenviar' : 'Enviar'}>
+                      <Send className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(item)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
