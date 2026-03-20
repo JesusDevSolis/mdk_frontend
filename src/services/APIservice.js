@@ -823,26 +823,41 @@ export const dashboardAPI = {
 }
 
 
-// Servicios de notificaciones
+// Servicios de notificaciones y promociones
 export const notificacionesAPI = {
-  // Enviar notificación por email
-  sendEmail: async (destinatarios, asunto, mensaje) => {
-    const response = await api.post('/notificaciones/email', {
-      destinatarios,
-      asunto,
-      mensaje
-    })
+  getAll: async (params = {}) => {
+    const response = await api.get('/notificaciones', { params })
     return response.data
   },
-  
-  // Enviar notificación por Telegram
-  sendTelegram: async (mensaje, chatIds = []) => {
-    const response = await api.post('/notificaciones/telegram', {
-      mensaje,
-      chatIds
-    })
+  getById: async (id) => {
+    const response = await api.get(`/notificaciones/${id}`)
+    return response.data
+  },
+  create: async (data) => {
+    const response = await api.post('/notificaciones', data)
+    return response.data
+  },
+  update: async (id, data) => {
+    const response = await api.put(`/notificaciones/${id}`, data)
+    return response.data
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/notificaciones/${id}`)
+    return response.data
+  },
+  previewDestinatarios: async (destinatarios) => {
+    const response = await api.post('/notificaciones/preview-destinatarios', { destinatarios })
+    return response.data
+  },
+  enviar: async (id) => {
+    const response = await api.post(`/notificaciones/${id}/enviar`)
+    return response.data
+  },
+  verificarEmail: async () => {
+    const response = await api.get('/notificaciones/test/email')
     return response.data
   }
+
 }
 
 // ===== SERVICIOS DE EXÁMENES =====

@@ -31,6 +31,7 @@ import InstructoresPage from './InstructoresPage'
 import ExamenesPage from './ExamenesPage'
 import ConfiguracionPage from './ConfiguracionPage'
 import TutoresPage from './TutoresPage'
+import NotificacionesPage from './NotificacionesPage'
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -48,6 +49,7 @@ const AdminDashboard = () => {
     { name: 'Calificaciones', href: '/admin/calificaciones', icon: GraduationCap, current: location.pathname.startsWith('/admin/calificaciones') },
     { name: 'Asistencias', href: '/admin/asistencias', icon: ClipboardCheck, current: location.pathname.startsWith('/admin/asistencias') },
     { name: 'Instructores', href: '/admin/instructores', icon: UserCheck, current: location.pathname.startsWith('/admin/instructores') },
+    { name: 'Notificaciones', href: '/admin/notificaciones', icon: Bell, current: location.pathname.startsWith('/admin/notificaciones') },
     { name: 'Configuración', href: '/admin/configuracion', icon: Settings, current: location.pathname.startsWith('/admin/configuracion') },
   ]
 
@@ -227,6 +229,7 @@ const AdminDashboard = () => {
               <Route path="calificaciones" element={<ExamenesPage />} />
               <Route path="asistencias" element={<AsistenciasPage />} />
               <Route path="instructores" element={<InstructoresPage />} />
+              <Route path="notificaciones" element={<NotificacionesPage />} />
               <Route path="configuracion" element={<ConfiguracionPage />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>

@@ -116,10 +116,6 @@ const AlumnoForm = ({
         firstName: '',
         lastName: '',
         email: '',
-        identification: {
-          type: 'ine',
-          number: ''
-        },
         phones: {
           primary: '',
           secondary: ''
@@ -161,7 +157,7 @@ const AlumnoForm = ({
         // ──────────────────────────────────────
       },
       belt: {
-        level: 'blanco',
+        level: 'principiante',
         dateObtained: '',
         certifiedBy: ''
       },
@@ -307,7 +303,7 @@ const AlumnoForm = ({
       setValue('enrollment.paymentDay',       alumno.enrollment?.paymentDay       ?? 15)
       
       // ✅ CARGAR CINTURÓN - CALENDARIO MEJORADO
-      setValue('belt.level', alumno.belt?.level || 'blanco')
+      setValue('belt.level', alumno.belt?.level || 'principiante')
       if (alumno.belt?.dateObtained) {
         const beltDate = new Date(alumno.belt.dateObtained)
         setSelectedBeltDate(beltDate)
@@ -347,16 +343,10 @@ const AlumnoForm = ({
       console.log('🚀 Datos del tutor a enviar (original):', tutorData)
       
       // Limpiar y estructurar datos según el modelo Tutor.js
-      const idNumber = tutorData.identification?.number?.trim()
       const formattedTutorData = {
         firstName: tutorData.firstName,
         lastName: tutorData.lastName,
         email: tutorData.email,
-        // Solo incluir identification.number si tiene valor real
-        identification: {
-          type: tutorData.identification?.type || 'ine',
-          ...(idNumber ? { number: idNumber } : {})
-        },
         phones: {
           primary: tutorData.phones?.primary || '',
           secondary: tutorData.phones?.secondary || ''
@@ -512,11 +502,14 @@ const AlumnoForm = ({
       }
 
       // Sanitizar campos con enum — "" no es valor válido en Mongoose enums
-      // Convertir strings vacíos a undefined para que el modelo use su default o lo ignore
       const enumFields = ['gender', 'maritalStatus']
       enumFields.forEach(f => { if (formData[f] === '') delete formData[f] })
       if (formData.medicalInfo?.bloodType === '') delete formData.medicalInfo.bloodType
       if (formData.gradeLevel === '') delete formData.gradeLevel
+
+      // Sanitizar belt — certifiedBy y dateObtained vacíos son inválidos
+      if (!formData.belt?.certifiedBy) delete formData.belt.certifiedBy
+      if (!formData.belt?.dateObtained) delete formData.belt.dateObtained
       
       console.log('🎯 Datos del alumno a enviar:', formData)
       console.log('🎯 Estructura completa:', JSON.stringify(formData, null, 2))
@@ -1315,33 +1308,6 @@ const AlumnoForm = ({
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Tipo de identificación
-                          </label>
-                          <select
-                            className="input-field"
-                            {...register('newTutor.identification.type')}
-                          >
-                            {ID_TYPES.map(type => (
-                              <option key={type.value} value={type.value}>
-                                {type.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Número de identificación
-                          </label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            {...register('newTutor.identification.number')}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Relación con el alumno *
                           </label>
                           <select
@@ -1677,56 +1643,75 @@ const AlumnoForm = ({
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Award className="w-5 h-5 text-indigo-600" />
                   Información de Cinturón
+                  <span className="text-xs font-normal text-gray-400 ml-1">(opcional — se puede completar después)</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Nivel actual — default Blanca (Chobocha) */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nivel actual <span className="text-red-500">*</span>
+                      Nivel actual
                     </label>
                     <select
-                      className={`input-field ${errors.belt?.level ? 'border-red-500' : ''}`}
-                      {...register('belt.level', { required: 'El nivel de cinturón es requerido' })}
+                      className="input-field"
+                      {...register('belt.level')}
                     >
-                      <option value="blanco">Blanco</option>
-                      <option value="blanco-amarillo">Blanco-Amarillo</option>
-                      <option value="amarillo">Amarillo</option>
-                      <option value="amarillo-naranja">Amarillo-Naranja</option>
-                      <option value="naranja">Naranja</option>
-                      <option value="naranja-verde">Naranja-Verde</option>
+                      <option value="principiante">Principiante (sin grado)</option>
+                      <option value="blanca-chobocha">Blanca (Chobocha)</option>
+                      <option value="blanca-1">Blanca 1er nivel (Peq. Drag)</option>
+                      <option value="blanca-2">Blanca 2do nivel (Peq. Drag)</option>
+                      <option value="blanca-3">Blanca 3er nivel (Peq. Drag)</option>
+                      <option value="blanca-avanzada">Blanca Avanzada</option>
+                      <option value="amarilla">Amarilla</option>
+                      <option value="amarilla-avanzada">Amarilla Avanzada</option>
                       <option value="verde">Verde</option>
-                      <option value="verde-azul">Verde-Azul</option>
+                      <option value="verde-avanzada">Verde Avanzada</option>
                       <option value="azul">Azul</option>
-                      <option value="azul-marron">Azul-Marrón</option>
+                      <option value="azul-avanzada">Azul Avanzada</option>
                       <option value="marron">Marrón</option>
-                      <option value="marron-negro">Marrón-Negro</option>
-                      <option value="negro-1">Negro 1° Dan</option>
-                      <option value="negro-2">Negro 2° Dan</option>
-                      <option value="negro-3">Negro 3° Dan</option>
+                      <option value="marron-avanzada">Marrón Avanzada</option>
+                      <option value="roja">Roja</option>
+                      <option value="roja-ieby">Roja Ieby</option>
+                      <option value="negra-1-poom">Negra 1er Poom</option>
+                      <option value="negra-2-poom">Negra 2do Poom</option>
+                      <option value="negra-3-poom">Negra 3er Poom</option>
+                      <option value="negra-1-dan">Negra 1er Dan</option>
+                      <option value="negra-2-dan">Negra 2do Dan</option>
+                      <option value="negra-3-dan">Negra 3er Dan</option>
+                      <option value="negra-4-dan">Negra 4to Dan</option>
+                      <option value="negra-5-dan">Negra 5to Dan</option>
+                      <option value="negra-6-dan">Negra 6to Dan</option>
+                      <option value="negra-7-dan">Negra 7mo Dan</option>
+                      <option value="negra-8-dan">Negra 8vo Dan</option>
+                      <option value="negra-9-dan">Negra 9no Dan</option>
+                      <option value="1-parcial">1er Parcial</option>
+                      <option value="2-parcial">2do Parcial</option>
+                      <option value="3-parcial">3er Parcial</option>
+                      <option value="4-parcial">4to Parcial</option>
+                      <option value="5-parcial">5to Parcial</option>
+                      <option value="6-parcial">6to Parcial</option>
+                      <option value="naranja">Naranja</option>
+                      <option value="morada">Morada</option>
+                      <option value="cafe">Café</option>
                     </select>
-                    {errors.belt?.level && (
-                      <p className="text-red-500 text-sm mt-1">{errors.belt.level.message}</p>
-                    )}
                   </div>
 
-                  {/* CALENDARIO MEJORADO PARA FECHA DE OBTENCIÓN DEL CINTURÓN */}
+                  {/* Fecha de obtención — opcional */}
                   <div className="calendar-input">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fecha de obtención <span className="text-red-500">*</span>
+                      Fecha de obtención <span className="text-gray-400 text-xs">(opcional)</span>
                     </label>
                     <div className="custom-datepicker">
                       <DatePicker
                         selected={selectedBeltDate}
                         onChange={(date) => {
                           setSelectedBeltDate(date)
-                          if (date) {
-                            setValue('belt.dateObtained', date.toISOString().split('T')[0])
-                          }
+                          setValue('belt.dateObtained', date ? date.toISOString().split('T')[0] : '')
                         }}
                         className="input-field w-full pr-10"
                         dateFormat="dd/MM/yyyy"
                         locale="es"
                         maxDate={new Date()}
-                        placeholderText="Seleccionar fecha de obtención..."
+                        placeholderText="Seleccionar fecha..."
                         showYearDropdown
                         scrollableYearDropdown
                         yearDropdownItemNumber={20}
@@ -1734,53 +1719,27 @@ const AlumnoForm = ({
                         dropdownMode="select"
                         todayButton="Hoy"
                         isClearable
-                        clearButtonTitle="Limpiar fecha"
                         showPopperArrow={false}
-                        popperModifiers={[
-                          {
-                            name: 'offset',
-                            options: {
-                              offset: [0, 10],
-                            },
-                          },
-                        ]}
+                        popperModifiers={[{ name: 'offset', options: { offset: [0, 10] } }]}
                       />
                     </div>
                     <CalendarDays className="calendar-icon w-5 h-5" />
-                    
                     {selectedBeltDate && (
                       <div className="mt-2 p-2 bg-indigo-50 rounded-lg border border-indigo-200">
                         <p className="text-sm text-indigo-700 font-medium">
-                          🥋 {selectedBeltDate.toLocaleDateString('es-MX', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
+                          🥋 {selectedBeltDate.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                       </div>
                     )}
-                    
-                    {/* Campo hidden para react-hook-form */}
-                    <input
-                      type="hidden"
-                      {...register('belt.dateObtained')}
-                    />
-                    {errors.belt?.dateObtained && (
-                      <p className="text-red-500 text-sm mt-1">{errors.belt.dateObtained.message}</p>
-                    )}
+                    <input type="hidden" {...register('belt.dateObtained')} />
                   </div>
 
+                  {/* Certificado por — opcional */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Certificado por <span className="text-red-500">*</span>
+                      Certificado por <span className="text-gray-400 text-xs">(opcional)</span>
                     </label>
-                    <select
-                      className={`input-field ${errors.belt?.certifiedBy ? 'border-red-500' : ''}`}
-                      {...register('belt.certifiedBy', {
-                        required: 'El instructor certificador es requerido'
-                      })}
-                    >
+                    <select className="input-field" {...register('belt.certifiedBy')}>
                       <option value="">Seleccionar instructor...</option>
                       {instructores.map(instructor => (
                         <option key={instructor._id} value={instructor._id}>
@@ -1788,9 +1747,6 @@ const AlumnoForm = ({
                         </option>
                       ))}
                     </select>
-                    {errors.belt?.certifiedBy && (
-                      <p className="text-red-500 text-sm mt-1">{errors.belt.certifiedBy.message}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1808,9 +1764,10 @@ const AlumnoForm = ({
                     </label>
                     <select className="input-field" {...register('preferences.preferredContactMethod')}>
                       <option value="email">Email</option>
-                      <option value="phone">Teléfono</option>
-                      <option value="whatsapp">WhatsApp</option>
+                      <option value="phone" disabled>Teléfono (próximamente)</option>
+                      <option value="whatsapp" disabled>WhatsApp (próximamente)</option>
                     </select>
+                    <p className="text-xs text-gray-400 mt-1">Por ahora solo disponible vía email</p>
                   </div>
 
                   <div className="space-y-2">

@@ -198,16 +198,26 @@ const AlumnosPage = () => {
   }
 
   const handleDelete = async (alumno) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar al alumno ${[alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')}?`)) {
+    const nombre = [alumno.firstName, alumno.lastName, alumno.secondLastName].filter(Boolean).join(' ')
+    
+    // Advertir si el alumno está activo
+    if (alumno.enrollment?.status === 'activo') {
+      toast.error(`No se puede eliminar a ${nombre} porque está activo. Primero cambia su estado a Inactivo.`)
+      setShowActions(null)
+      return
+    }
+
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al alumno ${nombre}?`)) {
       try {
         const response = await alumnosAPI.delete(alumno._id)
         if (response.success) {
           toast.success('Alumno eliminado exitosamente')
-          loadAlumnos() // Recargar la lista
+          loadAlumnos()
         }
       } catch (error) {
         console.error('Error eliminando alumno:', error)
-        toast.error('Error al eliminar el alumno')
+        const msg = error.response?.data?.message || 'Error al eliminar el alumno'
+        toast.error(msg)
       }
     }
     setShowActions(null)

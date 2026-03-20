@@ -1,241 +1,199 @@
 import React, { useState, useEffect } from 'react'
-import { Save, RotateCcw, Bell, Mail, Server, AlertCircle } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { Save, RotateCcw, Bell, Mail, Phone, MessageCircle, CheckCircle, XCircle, Loader, RefreshCw, AlertCircle } from 'lucide-react'
+import { notificacionesAPI } from '../../services/APIservice'
 
-const NotificacionesConfigForm = ({ configuraciones, onSave, onRestore, saving, onChanges }) => {
-    const { register, handleSubmit, formState: { errors, isDirty }, reset, watch } = useForm({
-        defaultValues: {
-            notif_email_habilitado: configuraciones.notif_email_habilitado || false,
-            notif_email_smtp_host: configuraciones.notif_email_smtp_host || '',
-            notif_email_smtp_port: configuraciones.notif_email_smtp_port || 587,
-            notif_email_smtp_user: configuraciones.notif_email_smtp_user || '',
-            notif_recordatorio_pagos: configuraciones.notif_recordatorio_pagos || true
-        }
-    })
+const DEFAULTS = {
+  notif_email_habilitado:   false,
+  notif_recordatorio_pagos: true
+}
 
-    useEffect(() => {
-        reset({
-            notif_email_habilitado: configuraciones.notif_email_habilitado || false,
-            notif_email_smtp_host: configuraciones.notif_email_smtp_host || '',
-            notif_email_smtp_port: configuraciones.notif_email_smtp_port || 587,
-            notif_email_smtp_user: configuraciones.notif_email_smtp_user || '',
-            notif_recordatorio_pagos: configuraciones.notif_recordatorio_pagos || true
-        })
-    }, [configuraciones, reset])
+const NotificacionesConfigForm = ({ configuraciones = {}, onSave, onRestore, saving }) => {
+  const [form, setForm]           = useState({ ...DEFAULTS, ...configuraciones })
+  const [emailStatus, setEmailStatus] = useState(null) // null | 'checking' | 'ok' | 'error'
+  const [emailError, setEmailError]   = useState('')
 
-    useEffect(() => {
-        if (onChanges) {
-            onChanges(isDirty)
-        }
-    }, [isDirty, onChanges])
-
-    const onSubmit = (data) => {
-        const valores = {
-            notif_email_habilitado: data.notif_email_habilitado,
-            notif_email_smtp_host: data.notif_email_smtp_host,
-            notif_email_smtp_port: parseInt(data.notif_email_smtp_port),
-            notif_email_smtp_user: data.notif_email_smtp_user,
-            notif_recordatorio_pagos: data.notif_recordatorio_pagos
-        }
-        onSave(valores)
+  useEffect(() => {
+    if (Object.keys(configuraciones).length > 0) {
+      setForm({ ...DEFAULTS, ...configuraciones })
     }
+  }, [JSON.stringify(configuraciones)])
 
-    const emailHabilitado = watch('notif_email_habilitado')
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
-    return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Configuración de Email */}
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave({
+      notif_email_habilitado:   form.notif_email_habilitado,
+      notif_recordatorio_pagos: form.notif_recordatorio_pagos
+    })
+  }
+
+  const checkEmailConnection = async () => {
+    setEmailStatus('checking')
+    setEmailError('')
+    try {
+      const res = await notificacionesAPI.verificarEmail()
+      if (res.success) {
+        setEmailStatus('ok')
+      } else {
+        setEmailStatus('error')
+        setEmailError(res.message || 'Error de conexión')
+      }
+    } catch (e) {
+      setEmailStatus('error')
+      setEmailError(e.response?.data?.message || 'No se pudo verificar la conexión')
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* ── EMAIL ────────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Header canal */}
+        <div className="flex items-center gap-3 px-5 py-4 bg-blue-50 border-b border-blue-100">
+          <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Mail className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-gray-900">Notificaciones por Email</h3>
+            <p className="text-xs text-gray-500">Configurado mediante variables de entorno en Railway</p>
+          </div>
+          {/* Toggle habilitado */}
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" className="sr-only peer"
+              checked={!!form.notif_email_habilitado}
+              onChange={e => set('notif_email_habilitado', e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Estado de conexión */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2">
+              {emailStatus === null && <AlertCircle className="w-4 h-4 text-gray-400" />}
+              {emailStatus === 'checking' && <Loader className="w-4 h-4 text-blue-500 animate-spin" />}
+              {emailStatus === 'ok' && <CheckCircle className="w-4 h-4 text-green-500" />}
+              {emailStatus === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  {emailStatus === null     && 'Estado del servidor de email'}
+                  {emailStatus === 'checking' && 'Verificando conexión...'}
+                  {emailStatus === 'ok'       && 'Servidor de email conectado ✓'}
+                  {emailStatus === 'error'    && 'Error de conexión'}
+                </p>
+                {emailStatus === 'error' && (
+                  <p className="text-xs text-red-500 mt-0.5">{emailError}</p>
+                )}
+                {emailStatus === null && (
+                  <p className="text-xs text-gray-400">Haz clic en verificar para comprobar la conexión con Gmail</p>
+                )}
+              </div>
+            </div>
+            <button type="button" onClick={checkEmailConnection}
+              disabled={emailStatus === 'checking'}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors">
+              <RefreshCw className={`w-3 h-3 ${emailStatus === 'checking' ? 'animate-spin' : ''}`} />
+              Verificar
+            </button>
+          </div>
+
+          {/* Info variables entorno */}
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-800 font-medium mb-1">Variables de entorno requeridas en Railway:</p>
+            <div className="space-y-1">
+              {['EMAIL_USER = tu-cuenta@gmail.com', 'EMAIL_PASSWORD = xxxx xxxx xxxx xxxx', 'EMAIL_FROM = "Escuela Bedolla <tu-cuenta@gmail.com>"'].map(v => (
+                <code key={v} className="block text-xs bg-amber-100 text-amber-900 px-2 py-1 rounded font-mono">{v}</code>
+              ))}
+            </div>
+          </div>
+
+          {/* Notificaciones automáticas */}
+          {form.notif_email_habilitado && (
             <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-primary-600" />
-                    Notificaciones por Email
-                </h3>
-
-                <div className="space-y-4">
-                    {/* Habilitar Email */}
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <input
-                            type="checkbox"
-                            id="notif_email_habilitado"
-                            {...register('notif_email_habilitado')}
-                            className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <div className="flex-1">
-                            <label htmlFor="notif_email_habilitado" className="font-medium text-gray-900 cursor-pointer">
-                                Habilitar notificaciones por email
-                            </label>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Permite enviar notificaciones automáticas por correo electrónico
-                            </p>
-                        </div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notificaciones automáticas</p>
+              <div className="space-y-2">
+                {[
+                  { key: 'notif_recordatorio_pagos', label: 'Recordatorios de pagos vencidos', desc: 'Avisa cuando un pago lleva más días del período de gracia' },
+                ].map(item => (
+                  <label key={item.key} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="checkbox" className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      checked={!!form[item.key]}
+                      onChange={e => set(item.key, e.target.checked)}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{item.label}</p>
+                      <p className="text-xs text-gray-500">{item.desc}</p>
                     </div>
-
-                    {/* Configuración SMTP (solo si email está habilitado) */}
-                    {emailHabilitado && (
-                        <div className="pl-7 space-y-4 border-l-2 border-primary-200">
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex items-start gap-3">
-                                    <Server className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                    <div className="text-sm text-blue-800">
-                                        <p className="font-medium mb-1">Configuración SMTP</p>
-                                        <p className="text-blue-700">
-                                            Necesitas configurar un servidor SMTP para enviar emails. Contacta a tu proveedor de correo para obtener estos datos.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* SMTP Host */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Servidor SMTP
-                                    </label>
-                                    <input
-                                        type="text"
-                                        {...register('notif_email_smtp_host')}
-                                        className="input-field"
-                                        placeholder="smtp.gmail.com"
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Dirección del servidor SMTP
-                                    </p>
-                                </div>
-
-                                {/* SMTP Port */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Puerto SMTP
-                                    </label>
-                                    <input
-                                        type="number"
-                                        {...register('notif_email_smtp_port', {
-                                            min: { value: 1, message: 'Puerto inválido' },
-                                            max: { value: 65535, message: 'Puerto inválido' }
-                                        })}
-                                        className={`input-field ${errors.notif_email_smtp_port ? 'border-red-300' : ''}`}
-                                        placeholder="587"
-                                    />
-                                    {errors.notif_email_smtp_port && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.notif_email_smtp_port.message}</p>
-                                    )}
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Comúnmente 587 (TLS) o 465 (SSL)
-                                    </p>
-                                </div>
-
-                                {/* SMTP User */}
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Usuario SMTP
-                                    </label>
-                                    <input
-                                        type="text"
-                                        {...register('notif_email_smtp_user')}
-                                        className="input-field"
-                                        placeholder="tu-email@ejemplo.com"
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Usuario o email para autenticación SMTP
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <div className="flex items-start gap-3">
-                                    <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                    <div className="text-sm text-yellow-800">
-                                        <p className="font-medium mb-1">Nota de Seguridad</p>
-                                        <p className="text-yellow-700">
-                                            La contraseña SMTP debe configurarse directamente en el servidor por motivos de seguridad. No la almacenes en la base de datos.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                  </label>
+                ))}
+              </div>
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Tipos de Notificaciones */}
-            <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-primary-600" />
-                    Tipos de Notificaciones Automáticas
-                </h3>
-
-                <div className="space-y-3">
-                    {/* Recordatorio de Pagos */}
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <input
-                            type="checkbox"
-                            id="notif_recordatorio_pagos"
-                            {...register('notif_recordatorio_pagos')}
-                            className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <div className="flex-1">
-                            <label htmlFor="notif_recordatorio_pagos" className="font-medium text-gray-900 cursor-pointer">
-                                Recordatorios de pagos vencidos
-                            </label>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Envía recordatorios automáticos cuando un pago esté próximo a vencer o esté vencido
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Otras notificaciones (placeholder para futuras expansiones) */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 opacity-60">
-                        <p className="text-sm text-gray-600 italic">
-                            Más tipos de notificaciones estarán disponibles próximamente:
-                        </p>
-                        <ul className="text-sm text-gray-500 mt-2 ml-4 list-disc">
-                            <li>Recordatorios de exámenes</li>
-                            <li>Notificaciones de cumpleaños</li>
-                            <li>Avisos de graduaciones</li>
-                            <li>Confirmaciones de asistencia</li>
-                        </ul>
-                    </div>
-                </div>
+      {/* ── TELÉFONO — próximamente ──────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden opacity-60">
+        <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
+          <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Phone className="w-5 h-5 text-gray-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-500">Notificaciones por Teléfono (SMS)</h3>
+              <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-500 rounded-full">Próximamente</span>
             </div>
+            <p className="text-xs text-gray-400">Envío de SMS a alumnos y tutores</p>
+          </div>
+          <div className="w-11 h-6 bg-gray-200 rounded-full cursor-not-allowed" />
+        </div>
+        <div className="px-5 py-4">
+          <p className="text-sm text-gray-400 text-center py-2">
+            📱 Integración con SMS disponible en una próxima versión
+          </p>
+        </div>
+      </div>
 
-            {/* Botones de acción */}
-            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                <button
-                    type="button"
-                    onClick={onRestore}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                    <RotateCcw className="w-4 h-4" />
-                    Restaurar Valores por Defecto
-                </button>
-
-                <button
-                    type="submit"
-                    disabled={saving || !isDirty}
-                    className="flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Save className="w-4 h-4" />
-                    {saving ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
+      {/* ── WHATSAPP — próximamente ──────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden opacity-60">
+        <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
+          <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
+            <MessageCircle className="w-5 h-5 text-green-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-500">Notificaciones por WhatsApp</h3>
+              <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-600 rounded-full">Próximamente</span>
             </div>
+            <p className="text-xs text-gray-400">Mensajes automáticos vía WhatsApp Business API</p>
+          </div>
+          <div className="w-11 h-6 bg-gray-200 rounded-full cursor-not-allowed" />
+        </div>
+        <div className="px-5 py-4">
+          <p className="text-sm text-gray-400 text-center py-2">
+            💬 Integración con WhatsApp Business disponible en una próxima versión
+          </p>
+        </div>
+      </div>
 
-            {/* Información adicional */}
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                    <Bell className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-indigo-800">
-                        <p className="font-medium mb-1">Sistema de Notificaciones</p>
-                        <ul className="list-disc list-inside space-y-1 text-indigo-700">
-                            <li>Las notificaciones se envían automáticamente según los eventos configurados</li>
-                            <li>Puedes desactivar las notificaciones en cualquier momento</li>
-                            <li>Los usuarios pueden configurar sus preferencias de notificación en su perfil</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </form>
-    )
+      {/* Botones */}
+      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+        <button type="button" onClick={onRestore} disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+          <RotateCcw className="w-4 h-4" /> Restaurar Valores
+        </button>
+        <button type="submit" disabled={saving}
+          className="flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+          <Save className="w-4 h-4" />
+          {saving ? 'Guardando...' : 'Guardar Cambios'}
+        </button>
+      </div>
+
+    </form>
+  )
 }
 
 export default NotificacionesConfigForm

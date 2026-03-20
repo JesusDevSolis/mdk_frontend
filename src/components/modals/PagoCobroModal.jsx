@@ -86,8 +86,10 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
   }
 
   const handleSubmit = async () => {
-    if (!file) {
-      setErrors(e => ({ ...e, file: 'El comprobante es obligatorio' }))
+    // El comprobante es obligatorio solo para transferencia, depósito y cheque
+    const metodosConComprobante = ['transferencia', 'deposito', 'cheque']
+    if (metodosConComprobante.includes(paymentMethod) && !file) {
+      setErrors(e => ({ ...e, file: 'Para este método de pago el comprobante es obligatorio' }))
       return
     }
     setLoading(true)
@@ -279,7 +281,12 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
             <div className="space-y-4">
               <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                <span>El comprobante es <strong>obligatorio</strong> para finalizar el registro. Acepta JPG, PNG, WEBP o PDF (máx. 5MB).</span>
+                <span>
+                  {['transferencia', 'deposito', 'cheque'].includes(paymentMethod)
+                    ? <>El comprobante es <strong>obligatorio</strong> para {paymentMethod}. Acepta JPG, PNG, WEBP o PDF (máx. 5MB).</>
+                    : <>Para pagos en <strong>efectivo</strong> o <strong>tarjeta</strong> el comprobante es <strong>opcional</strong> pero recomendado.</>
+                  }
+                </span>
               </div>
 
               <div
@@ -403,7 +410,7 @@ const PagoCobroModal = ({ isOpen, onClose, pago, onSuccess }) => {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={loading || !file}
+                disabled={loading}
                 className="btn-primary flex items-center gap-2 disabled:opacity-50"
               >
                 {loading
