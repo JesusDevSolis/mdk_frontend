@@ -31,6 +31,8 @@ import PermissionGuard from '../../components/auth/PermissionGuard'
 
 import AlumnoForm from '../../components/forms/AlumnoForm'
 import AlumnoDetailsModal from '../../components/modals/AlumnoDetailsModal'
+import DisciplinaBadge from '../../components/shared/DisciplinaBadge'
+import useDisciplinas from '../../hooks/useDisciplinas'
 import toast from 'react-hot-toast'
 
 // ── Opciones de disciplina/programa ──────────────────────────────────────────
@@ -57,6 +59,7 @@ const AlumnosPage = () => {
   const { canCreate, canUpdate, canDelete } = usePermissions('alumnos')
   
   const { user } = useAuth()
+  const { getDisciplina } = useDisciplinas()
   const [alumnos, setAlumnos] = useState([])
   const [sucursales, setSucursales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -419,18 +422,15 @@ const AlumnosPage = () => {
           {/* Detalles */}
           <div className="space-y-2 text-sm text-gray-600">
             {/* Disciplina/Programa */}
-            {alumno.enrollment?.programa && (() => {
-              const prog = PROGRAMA_OPTIONS.find(p => p.value === alumno.enrollment.programa)
-              const colors = PROGRAMA_COLORS[alumno.enrollment.programa]
-              return prog ? (
-                <div className="flex items-center gap-2">
-                  <Dumbbell className="w-4 h-4 text-gray-400" />
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors?.bg || 'bg-gray-100'} ${colors?.text || 'text-gray-700'}`}>
-                    {prog.emoji} {prog.label}
-                  </span>
-                </div>
-              ) : null
-            })()}
+            {alumno.enrollment?.programa && (
+              <div className="flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <DisciplinaBadge
+                  programa={alumno.enrollment.programa}
+                  size="sm"
+                />
+              </div>
+            )}
 
             {/* ID de estudiante */}
             <div className="flex items-center gap-2">
@@ -594,6 +594,7 @@ const AlumnosPage = () => {
             {PROGRAMA_OPTIONS.map((prog) => {
               const isActive = filters.programa === prog.value
               const colors = prog.value ? PROGRAMA_COLORS[prog.value] : null
+              const disc = prog.value ? getDisciplina(prog.value) : null
 
               return (
                 <button
@@ -612,7 +613,14 @@ const AlumnosPage = () => {
                     }
                   `}
                 >
-                  <span>{prog.emoji}</span>
+                  {disc?.logoUrl ? (
+                    <img src={disc.logoUrl} alt={prog.label}
+                      className="w-4 h-4 object-contain flex-shrink-0"
+                      onError={e => { e.target.style.display='none' }}
+                    />
+                  ) : (
+                    <span>{prog.emoji}</span>
+                  )}
                   <span>{prog.label}</span>
                   {isActive && prog.value && (
                     <X className="w-3 h-3 ml-0.5 opacity-80" />

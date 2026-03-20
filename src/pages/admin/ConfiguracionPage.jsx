@@ -191,6 +191,8 @@ const ConfiguracionPage = () => {
 
     // Restaurar categoría a valores por defecto
     const handleRestaurarCategoria = async (categoria) => {
+        if (categoria === 'general') return
+
         const confirmacion = window.confirm(
             `¿Estás seguro de restaurar todas las configuraciones de ${categoria} a sus valores por defecto?\n\n` +
             `Esta acción no se puede deshacer.`

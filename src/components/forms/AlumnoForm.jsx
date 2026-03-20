@@ -29,6 +29,7 @@ import {
   BookOpen
 } from 'lucide-react'
 import { alumnosAPI, tutoresAPI, sucursalesAPI, authAPI, utils, GENDER_OPTIONS, STATUS_OPTIONS, ID_TYPES } from '../../services/APIservice'
+import useDisciplinas from '../../hooks/useDisciplinas'
 import { useAuth } from '../../context/Authcontext'
 import toast from 'react-hot-toast'
 
@@ -62,6 +63,7 @@ const AlumnoForm = ({
   mode = 'create' // 'create' or 'edit'
 }) => {
   const { user } = useAuth()
+  const { getDisciplina } = useDisciplinas()
   const [isLoading, setIsLoading] = useState(false)
   const [tutores, setTutores] = useState([])
   const [sucursales, setSucursales] = useState([])
@@ -764,7 +766,16 @@ const AlumnoForm = ({
                             validate: v => (Array.isArray(v) ? v.length > 0 : !!v) || 'Selecciona al menos una disciplina'
                           })}
                         />
-                        <span className="text-2xl">{prog.emoji}</span>
+                        {(() => {
+                          const disc = getDisciplina(prog.value)
+                          return disc?.logoUrl ? (
+                            <img src={disc.logoUrl} alt={prog.label}
+                              className="w-10 h-10 object-contain"
+                              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='inline' }}
+                            />
+                          ) : null
+                        })()}
+                        <span className="text-2xl" style={{ display: getDisciplina(prog.value)?.logoUrl ? 'none' : 'inline' }}>{prog.emoji}</span>
                         <span className={`text-xs font-semibold text-center leading-tight
                           ${selected ? 'text-primary-700' : 'text-gray-600'}`}>
                           {prog.label}

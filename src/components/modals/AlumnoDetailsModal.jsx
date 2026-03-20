@@ -28,6 +28,7 @@ import { utils, BELT_LEVELS_DISPLAY, GENDER_OPTIONS, STATUS_OPTIONS, alumnosAPI 
 
 // Importar sistema de permisos
 import { usePermissions } from '../../hooks/usePermissions'
+import DisciplinaBadge from '../shared/DisciplinaBadge'
 import PermissionGuard from '../../components/auth/PermissionGuard'
 import toast from 'react-hot-toast'
 
@@ -216,10 +217,11 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                   {getStatusDisplay()}
                 </span>
                 {/* v1.5: badge de disciplina */}
-                {programaInfo && (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${programaInfo.color}`}>
-                    {programaInfo.emoji} {programaInfo.label}
-                  </span>
+                {alumno.enrollment?.programa && (
+                  <DisciplinaBadge
+                    programa={alumno.enrollment.programa}
+                    size="sm"
+                  />
                 )}
                 <span>ID: {alumno.enrollment?.studentId || 'Sin ID'}</span>
                 <span>{age}</span>
@@ -515,14 +517,14 @@ const AlumnoDetailsModal = ({ alumno, isOpen, onClose, onEdit }) => {
                   </div>
 
                   {/* ── v1.5: Disciplina ── */}
-                  {programaInfo && (
+                  {alumno.enrollment?.programa && (
                     <div>
                       <label className="text-sm font-medium text-gray-600">Disciplina</label>
                       <div className="mt-1">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${programaInfo.color}`}>
-                          <span>{programaInfo.emoji}</span>
-                          <span>{programaInfo.label}</span>
-                        </span>
+                        <DisciplinaBadge
+                          programa={alumno.enrollment.programa}
+                          size="md"
+                        />
                       </div>
                     </div>
                   )}
