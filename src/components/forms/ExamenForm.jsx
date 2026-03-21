@@ -3,51 +3,49 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import DatePicker from 'react-datepicker'
 import { registerLocale, setDefaultLocale } from 'react-datepicker'
 import { es } from 'date-fns/locale/es'
-import "react-datepicker/dist/react-datepicker.css"
-import { 
-  ClipboardCheck,
-  X,
-  Save,
-  Loader,
-  Award,
-  Building2,
-  Calendar,
-  Clock,
-  Users,
-  DollarSign,
-  Plus,
-  Trash2,
-  AlertCircle,
-  Info
+import 'react-datepicker/dist/react-datepicker.css'
+import {
+  ClipboardCheck, X, Save, Loader, Award, Building2,
+  Calendar, Clock, Users, DollarSign, Plus, Trash2,
+  AlertCircle, CheckCircle2, Info, ChevronDown
 } from 'lucide-react'
 import { examenesAPI, sucursalesAPI, instructoresAPI } from '../../services/APIservice'
 import { useAuth } from '../../context/Authcontext'
+import useCinturones from '../../hooks/useCinturones'
 import toast from 'react-hot-toast'
 
 registerLocale('es', es)
 setDefaultLocale('es')
 
-const ExamenForm = ({ 
-  examen = null, 
-  isOpen, 
-  onClose, 
+
+// Sección con título
+const Section = ({ icon: Icon, title, color = 'text-primary-600', children }) => (
+  <div>
+    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+      <Icon className={`w-4 h-4 ${color}`} />
+      {title}
+    </h3>
+    {children}
+  </div>
+)
+
+const ExamenForm = ({
+  examen = null,
+  isOpen,
+  onClose,
   onSuccess,
   mode = 'create'
 }) => {
-  const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [sucursales, setSucursales] = useState([])
+  const { user }    = useAuth()
+  const { cinturones, loading: loadingCinturones } = useCinturones()
+  const [isLoading, setIsLoading]     = useState(false)
+  const [sucursales, setSucursales]   = useState([])
   const [instructores, setInstructores] = useState([])
   const [selectedFecha, setSelectedFecha] = useState(null)
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-    control
+    register, handleSubmit, formState: { errors },
+    reset, setValue, watch, control
   } = useForm({
     defaultValues: {
       nombre: '',
@@ -60,10 +58,10 @@ const ExamenForm = ({
       sucursal: user?.role === 'instructor' ? user?.sucursal : '',
       instructores: [],
       categorias: [
-        { nombre: 'Poomsae', descripcion: 'Formas', peso: 25 },
-        { nombre: 'Kyorugi', descripcion: 'Combate', peso: 25 },
-        { nombre: 'Kyukpa', descripcion: 'Rompimiento', peso: 25 },
-        { nombre: 'Teoría', descripcion: 'Conocimiento teórico', peso: 25 }
+        { nombre: 'Poomsae',  descripcion: 'Formas',                peso: 25 },
+        { nombre: 'Kyorugi',  descripcion: 'Combate',               peso: 25 },
+        { nombre: 'Kyukpa',   descripcion: 'Rompimiento',           peso: 25 },
+        { nombre: 'Teoría',   descripcion: 'Conocimiento teórico',  peso: 25 },
       ],
       requisitos: {
         asistenciaMinima: 75,
@@ -75,61 +73,42 @@ const ExamenForm = ({
     }
   })
 
-  const { fields: categorias, append, remove } = useFieldArray({
-    control,
-    name: "categorias"
-  })
-
-  const watchTipo = watch('tipo')
+  const { fields: categorias, append, remove } = useFieldArray({ control, name: 'categorias' })
+  const watchTipo       = watch('tipo')
   const watchCategorias = watch('categorias')
+  const watchCinActual  = watch('cinturonActualRequerido')
+  const watchCinObj     = watch('cinturonObjetivo')
 
   useEffect(() => {
-    if (isOpen) {
-      loadInitialData()
-    }
+    if (isOpen) loadInitialData()
   }, [isOpen])
 
-  // Segundo useEffect para poblar después de cargar sucursales
   useEffect(() => {
-    if (isOpen && examen && sucursales.length > 0) {
-      populateForm()
-    }
+    if (isOpen && examen && sucursales.length > 0) populateForm()
   }, [isOpen, examen, sucursales])
 
   const loadInitialData = async () => {
     try {
-      const [sucursalesRes, instructoresRes] = await Promise.all([
+      const [sucRes, insRes] = await Promise.all([
         sucursalesAPI.getAll(),
         instructoresAPI.getAll()
       ])
+      // sucursalesAPI devuelve { success, data: { sucursales: [...], pagination: {} } }
+      let sucs = []
+      if (Array.isArray(sucRes?.data?.sucursales))              sucs = sucRes.data.sucursales
+      else if (sucRes?.success && Array.isArray(sucRes.data))   sucs = sucRes.data
+      else if (Array.isArray(sucRes?.data))                     sucs = sucRes.data
+      else if (Array.isArray(sucRes?.data?.data))               sucs = sucRes.data.data
+      else if (Array.isArray(sucRes))                           sucs = sucRes
+      setSucursales(sucs)
 
-      // Procesar sucursales (puede venir como objeto o array)
-      let sucursalesData = []
-      if (Array.isArray(sucursalesRes?.data)) {
-        sucursalesData = sucursalesRes.data
-      } else if (sucursalesRes?.data?.data && Array.isArray(sucursalesRes.data.data)) {
-        sucursalesData = sucursalesRes.data.data
-      } else if (sucursalesRes?.data && typeof sucursalesRes.data === 'object') {
-        // Si data es un objeto con las sucursales, intentar obtenerlas
-        const dataObj = sucursalesRes.data
-        if (dataObj.sucursales && Array.isArray(dataObj.sucursales)) {
-          sucursalesData = dataObj.sucursales
-        } else if (Object.keys(dataObj).length > 0) {
-          // Convertir el objeto a array si tiene propiedades
-          sucursalesData = Object.values(dataObj).filter(item => 
-            item && typeof item === 'object' && item._id
-          )
-        }
-      }
-
-      // Procesar instructores (ya viene como array)
-      const instructoresData = Array.isArray(instructoresRes?.data) ? instructoresRes.data : []
-
-      setSucursales(sucursalesData)
-      setInstructores(instructoresData)
-
-    } catch (error) {
-      console.error('Error al cargar datos:', error)
+      // instructoresAPI devuelve { success, data: [...], pagination }
+      let insts = []
+      if (insRes?.success && Array.isArray(insRes.data))       insts = insRes.data
+      else if (Array.isArray(insRes?.data))                     insts = insRes.data
+      else if (Array.isArray(insRes))                           insts = insRes
+      setInstructores(insts)
+    } catch (err) {
       toast.error('Error al cargar datos del formulario')
       setSucursales([])
       setInstructores([])
@@ -138,47 +117,62 @@ const ExamenForm = ({
 
   const populateForm = () => {
     if (!examen) return
-
-    console.log('🔍 Poblando formulario con examen:', examen)
-    console.log('🔍 Sucursal del examen:', examen.sucursal)
-    console.log('🔍 ID de sucursal:', examen.sucursal?._id || examen.sucursal)
-    console.log('🔍 Sucursales disponibles:', sucursales)
-
-    setValue('nombre', examen.nombre || '')
-    setValue('descripcion', examen.descripcion || '')
-    setValue('tipo', examen.tipo || 'graduacion')
-    setValue('hora', examen.hora || '')
-    setValue('cinturonObjetivo', examen.cinturonObjetivo || '')
-    setValue('cinturonActualRequerido', examen.cinturonActualRequerido || '')
-    
-    const sucursalId = examen.sucursal?._id || examen.sucursal || ''
-    console.log('🔍 Seteando sucursal ID:', sucursalId)
-    setValue('sucursal', sucursalId)
-    
-    setValue('instructores', examen.instructores?.map(i => i._id || i) || [])
-    setValue('categorias', examen.categorias || [])
-    setValue('requisitos', examen.requisitos || {})
-    setValue('notas', examen.notas || '')
-
-    if (examen.fecha) {
-      setSelectedFecha(new Date(examen.fecha))
-    }
+    setValue('nombre',                 examen.nombre || '')
+    setValue('descripcion',            examen.descripcion || '')
+    setValue('tipo',                   examen.tipo || 'graduacion')
+    setValue('hora',                   examen.hora || '')
+    setValue('cinturonObjetivo',       examen.cinturonObjetivo || '')
+    setValue('cinturonActualRequerido',examen.cinturonActualRequerido || '')
+    setValue('sucursal',               examen.sucursal?._id || examen.sucursal || '')
+    setValue('instructores',           examen.instructores?.map(i => i._id || i) || [])
+    setValue('categorias',             examen.categorias || [])
+    setValue('requisitos',             examen.requisitos || {})
+    setValue('notas',                  examen.notas || '')
+    if (examen.fecha) setSelectedFecha(new Date(examen.fecha))
   }
 
+  // BeltSelect dinámico — usa los cinturones de la BD
+  const BeltSelectDyn = ({ value, onChange, placeholder = 'Seleccionar', error }) => {
+    const selected = cinturones.find(c => c.key === value)
+    return (
+      <div>
+        <div className={`relative flex items-center border rounded-xl bg-white transition-colors
+          ${error ? 'border-red-400' : 'border-gray-200 hover:border-gray-300 focus-within:border-primary-400'}`}>
+          {selected && (
+            <div className="pl-3 flex-shrink-0">
+              <div className="w-4 h-4 rounded-full border border-gray-200 shadow-sm flex-shrink-0"
+                style={{ backgroundColor: selected.color }} />
+            </div>
+          )}
+          <select
+            value={value || ''}
+            onChange={e => onChange(e.target.value)}
+            className="flex-1 px-3 py-2.5 bg-transparent text-sm text-gray-900 appearance-none outline-none cursor-pointer"
+          >
+            <option value="">{loadingCinturones ? 'Cargando...' : placeholder}</option>
+            {cinturones.map(c => (
+              <option key={c.key} value={c.key}>{c.nombre}</option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 text-gray-400 mr-3 flex-shrink-0 pointer-events-none" />
+        </div>
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    )
+  }
+
+  const getSumaPesos = () =>
+    watchCategorias?.reduce((s, c) => s + (parseFloat(c.peso) || 0), 0) || 0
+
   const onSubmit = async (data) => {
+    const sumaPesos = getSumaPesos()
+    if (Math.abs(sumaPesos - 100) > 0.01) {
+      toast.error(`Los pesos deben sumar 100% (actual: ${sumaPesos}%)`)
+      return
+    }
     try {
       setIsLoading(true)
-
-      // Validar suma de pesos
-      const sumaPesos = data.categorias.reduce((sum, cat) => sum + parseFloat(cat.peso || 0), 0)
-      if (Math.abs(sumaPesos - 100) > 0.01) {
-        toast.error(`La suma de los pesos debe ser 100% (actual: ${sumaPesos}%)`)
-        setIsLoading(false)
-        return
-      }
-
-      // Preparar datos base
-      const examenData = {
+      const payload = {
         nombre: data.nombre,
         descripcion: data.descripcion,
         tipo: data.tipo,
@@ -188,44 +182,32 @@ const ExamenForm = ({
         instructores: data.instructores || [],
         categorias: data.categorias,
         requisitos: {
-          asistenciaMinima: parseFloat(data.requisitos.asistenciaMinima),
+          asistenciaMinima:    parseFloat(data.requisitos.asistenciaMinima),
           diasMinimosCinturon: parseInt(data.requisitos.diasMinimosCinturon),
-          pagosAlCorriente: data.requisitos.pagosAlCorriente,
-          costoExamen: parseFloat(data.requisitos.costoExamen)
+          pagosAlCorriente:    data.requisitos.pagosAlCorriente,
+          costoExamen:         parseFloat(data.requisitos.costoExamen)
         },
         notas: data.notas
       }
-
-      // ✅ SOLO agregar campos de cinturón si es graduación Y tienen valor
       if (data.tipo === 'graduacion') {
         if (!data.cinturonObjetivo || !data.cinturonActualRequerido) {
           toast.error('Los cinturones son requeridos para exámenes de graduación')
-          setIsLoading(false)
           return
         }
-        examenData.cinturonObjetivo = data.cinturonObjetivo
-        examenData.cinturonActualRequerido = data.cinturonActualRequerido
+        payload.cinturonObjetivo        = data.cinturonObjetivo
+        payload.cinturonActualRequerido = data.cinturonActualRequerido
       }
-      // Si no es graduación, simplemente NO agregamos esos campos
-
-      console.log('📤 Datos a enviar:', examenData)
-
-      let response
-      if (mode === 'edit' && examen?._id) {
-        response = await examenesAPI.update(examen._id, examenData)
-      } else {
-        response = await examenesAPI.create(examenData)
-      }
-
-      if (response.success) {
-        toast.success(mode === 'edit' ? 'Examen actualizado exitosamente' : 'Examen creado exitosamente')
-        onSuccess && onSuccess()
+      const res = mode === 'edit' && examen?._id
+        ? await examenesAPI.update(examen._id, payload)
+        : await examenesAPI.create(payload)
+      if (res.success) {
+        onSuccess?.()
         handleClose()
+      } else {
+        toast.error(res.message || 'Error al guardar')
       }
-
-    } catch (error) {
-      console.error('Error al guardar examen:', error)
-      toast.error(error.response?.data?.message || 'Error al guardar examen')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error al guardar examen')
     } finally {
       setIsLoading(false)
     }
@@ -237,84 +219,59 @@ const ExamenForm = ({
     onClose()
   }
 
-  const agregarCategoria = () => {
-    append({ nombre: '', descripcion: '', peso: 0 })
-  }
-
-  const getSumaPesos = () => {
-    return watchCategorias?.reduce((sum, cat) => sum + (parseFloat(cat.peso) || 0), 0) || 0
-  }
-
   if (!isOpen) return null
 
+  const sumaPesos = getSumaPesos()
+  const pesosOk   = Math.abs(sumaPesos - 100) < 0.01
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden flex flex-col">
+
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <ClipboardCheck className="w-6 h-6 text-white" />
-            <h2 className="text-xl font-bold text-white">
-              {mode === 'edit' ? 'Editar Examen' : 'Nuevo Examen'}
-            </h2>
+            <div className="p-2 bg-primary-50 rounded-xl">
+              <ClipboardCheck className="w-5 h-5 text-primary-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">
+                {mode === 'edit' ? 'Editar Examen' : 'Nuevo Examen'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {mode === 'edit' ? 'Modifica los datos del examen' : 'Completa la información para crear el examen'}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-white" />
+          <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          {/* Información Básica */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Info className="w-5 h-5 text-blue-600" />
-                Información Básica
-              </h3>
-              
+        {/* Body */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
+          <div className="px-6 py-5 space-y-6">
+
+            {/* Información Básica */}
+            <Section icon={Info} title="Información Básica">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Nombre */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre del Examen *
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Nombre del Examen <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
                     {...register('nombre', { required: 'El nombre es requerido' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input-field w-full"
                     placeholder="Ej: Examen de Graduación Cinturón Amarillo"
                   />
-                  {errors.nombre && (
-                    <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>
-                  )}
+                  {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
                 </div>
 
-                {/* Descripción */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    {...register('descripcion')}
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Descripción del examen..."
-                  />
-                </div>
-
-                {/* Tipo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Examen *
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Tipo <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    {...register('tipo', { required: 'El tipo es requerido' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
+                  <select {...register('tipo')} className="input-field w-full">
                     <option value="graduacion">Graduación</option>
                     <option value="evaluacion_tecnica">Evaluación Técnica</option>
                     <option value="evaluacion_semestral">Evaluación Semestral</option>
@@ -322,305 +279,236 @@ const ExamenForm = ({
                   </select>
                 </div>
 
-                {/* Sucursal */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Building2 className="w-4 h-4 inline mr-1" />
-                    Sucursal *
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Building2 className="w-3.5 h-3.5 inline mr-1 text-gray-400" />
+                    Sucursal <span className="text-red-500">*</span>
                   </label>
                   <select
                     {...register('sucursal', { required: 'La sucursal es requerida' })}
                     disabled={user?.role === 'instructor'}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="input-field w-full disabled:bg-gray-50 disabled:cursor-not-allowed"
                   >
                     <option value="">Seleccionar sucursal</option>
-                    {Array.isArray(sucursales) && sucursales.map(suc => (
-                      <option key={suc._id} value={suc._id}>{suc.name}</option>
-                    ))}
+                    {sucursales.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                   </select>
-                  {errors.sucursal && (
-                    <p className="text-red-500 text-sm mt-1">{errors.sucursal.message}</p>
-                  )}
+                  {errors.sucursal && <p className="text-red-500 text-xs mt-1">{errors.sucursal.message}</p>}
                 </div>
 
-                {/* Fecha */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="w-4 h-4 inline mr-1" />
-                    Fecha *
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Calendar className="w-3.5 h-3.5 inline mr-1 text-gray-400" />
+                    Fecha <span className="text-red-500">*</span>
                   </label>
                   <DatePicker
                     selected={selectedFecha}
-                    onChange={(date) => {
-                      setSelectedFecha(date)
-                      setValue('fecha', date)
-                    }}
+                    onChange={date => { setSelectedFecha(date); setValue('fecha', date) }}
                     dateFormat="dd/MM/yyyy"
                     locale="es"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholderText="Seleccionar fecha"
+                    className="input-field w-full"
+                    placeholderText="dd/mm/aaaa"
+                    wrapperClassName="w-full"
                   />
-                  {errors.fecha && (
-                    <p className="text-red-500 text-sm mt-1">La fecha es requerida</p>
-                  )}
                 </div>
 
-                {/* Hora */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Clock className="w-4 h-4 inline mr-1" />
-                    Hora *
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Clock className="w-3.5 h-3.5 inline mr-1 text-gray-400" />
+                    Hora <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="time"
                     {...register('hora', { required: 'La hora es requerida' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="input-field w-full"
                   />
-                  {errors.hora && (
-                    <p className="text-red-500 text-sm mt-1">{errors.hora.message}</p>
-                  )}
+                  {errors.hora && <p className="text-red-500 text-xs mt-1">{errors.hora.message}</p>}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
+                  <textarea
+                    {...register('descripcion')}
+                    rows={2}
+                    className="input-field w-full resize-none"
+                    placeholder="Descripción opcional del examen..."
+                  />
                 </div>
               </div>
-            </div>
+            </Section>
 
-            {/* Cinturones (solo para graduación) */}
+            {/* Cinturones — solo para graduación */}
             {watchTipo === 'graduacion' && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-purple-600" />
-                  Cinturones
-                </h3>
-                
+              <Section icon={Award} title="Cinturones" color="text-amber-600">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Cinturón Actual Requerido */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cinturón Actual Requerido *
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Cinturón Actual Requerido <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      {...register('cinturonActualRequerido', { 
-                        required: watchTipo === 'graduacion' ? 'Este campo es requerido' : false 
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="blanco">Blanco</option>
-                      <option value="blanco-amarillo">Blanco-Amarillo</option>
-                      <option value="amarillo">Amarillo</option>
-                      <option value="amarillo-naranja">Amarillo-Naranja</option>
-                      <option value="naranja">Naranja</option>
-                      <option value="naranja-verde">Naranja-Verde</option>
-                      <option value="verde">Verde</option>
-                      <option value="verde-azul">Verde-Azul</option>
-                      <option value="azul">Azul</option>
-                      <option value="azul-marron">Azul-Marrón</option>
-                      <option value="marron">Marrón</option>
-                      <option value="marron-negro">Marrón-Negro</option>
-                    </select>
-                    {errors.cinturonActualRequerido && (
-                      <p className="text-red-500 text-sm mt-1">{errors.cinturonActualRequerido.message}</p>
-                    )}
+                    <BeltSelectDyn
+                      value={watchCinActual}
+                      onChange={v => setValue('cinturonActualRequerido', v)}
+                      placeholder="Cinturón que debe tener"
+                      error={errors.cinturonActualRequerido?.message}
+                    />
                   </div>
-
-                  {/* Cinturón Objetivo */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cinturón Objetivo *
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Cinturón Objetivo <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      {...register('cinturonObjetivo', { 
-                        required: watchTipo === 'graduacion' ? 'Este campo es requerido' : false 
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="blanco-amarillo">Blanco-Amarillo</option>
-                      <option value="amarillo">Amarillo</option>
-                      <option value="amarillo-naranja">Amarillo-Naranja</option>
-                      <option value="naranja">Naranja</option>
-                      <option value="naranja-verde">Naranja-Verde</option>
-                      <option value="verde">Verde</option>
-                      <option value="verde-azul">Verde-Azul</option>
-                      <option value="azul">Azul</option>
-                      <option value="azul-marron">Azul-Marrón</option>
-                      <option value="marron">Marrón</option>
-                      <option value="marron-negro">Marrón-Negro</option>
-                      <option value="negro-1">Negro 1er Dan</option>
-                      <option value="negro-2">Negro 2do Dan</option>
-                      <option value="negro-3">Negro 3er Dan</option>
-                    </select>
-                    {errors.cinturonObjetivo && (
-                      <p className="text-red-500 text-sm mt-1">{errors.cinturonObjetivo.message}</p>
-                    )}
+                    <BeltSelectDyn
+                      value={watchCinObj}
+                      onChange={v => setValue('cinturonObjetivo', v)}
+                      placeholder="Cinturón a obtener"
+                      error={errors.cinturonObjetivo?.message}
+                    />
                   </div>
                 </div>
-              </div>
+                {watchCinActual && watchCinObj && (() => {
+                    const cA = cinturones.find(c => c.key === watchCinActual)
+                    const cO = cinturones.find(c => c.key === watchCinObj)
+                    return (
+                      <div className="mt-3 flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border border-gray-200"
+                            style={{ backgroundColor: cA?.color || '#9CA3AF' }} />
+                          <span className="text-sm text-gray-600">{cA?.nombre || watchCinActual}</span>
+                        </div>
+                        <span className="text-gray-400">→</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full border border-gray-200"
+                            style={{ backgroundColor: cO?.color || '#9CA3AF' }} />
+                          <span className="text-sm font-medium text-gray-800">{cO?.nombre || watchCinObj}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+              </Section>
             )}
 
             {/* Categorías de Evaluación */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <ClipboardCheck className="w-5 h-5 text-green-600" />
-                  Categorías de Evaluación
-                </h3>
-                <button
-                  type="button"
-                  onClick={agregarCategoria}
-                  className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar
-                </button>
-              </div>
+            <Section icon={ClipboardCheck} title="Categorías de Evaluación" color="text-green-600">
+              <div className="space-y-2">
+                {/* Cabecera tabla */}
+                <div className="grid grid-cols-12 gap-2 px-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <span className="col-span-4">Nombre</span>
+                  <span className="col-span-5">Descripción</span>
+                  <span className="col-span-2 text-center">Peso %</span>
+                  <span className="col-span-1" />
+                </div>
 
-              <div className="space-y-3">
                 {categorias.map((field, index) => (
-                  <div key={field.id} className="flex gap-3 items-start bg-gray-50 p-3 rounded-lg">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <input
-                        type="text"
-                        {...register(`categorias.${index}.nombre`, { required: true })}
-                        placeholder="Nombre"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="text"
-                        {...register(`categorias.${index}.descripcion`)}
-                        placeholder="Descripción"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        {...register(`categorias.${index}.peso`, { 
-                          required: true,
-                          min: 0,
-                          max: 100
-                        })}
-                        placeholder="Peso %"
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
+                  <div key={field.id}
+                    className="grid grid-cols-12 gap-2 items-center bg-gray-50 rounded-xl px-3 py-2">
+                    <input
+                      {...register(`categorias.${index}.nombre`, { required: true })}
+                      placeholder="Nombre"
+                      className="col-span-4 input-field text-sm py-1.5"
+                    />
+                    <input
+                      {...register(`categorias.${index}.descripcion`)}
+                      placeholder="Descripción"
+                      className="col-span-5 input-field text-sm py-1.5"
+                    />
+                    <input
+                      type="number"
+                      {...register(`categorias.${index}.peso`, { required: true, min: 0, max: 100 })}
+                      placeholder="0"
+                      className="col-span-2 input-field text-sm py-1.5 text-center"
+                    />
+                    <button type="button" onClick={() => remove(index)}
+                      className="col-span-1 flex items-center justify-center p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 flex items-center gap-2">
-                <AlertCircle className={`w-4 h-4 ${getSumaPesos() === 100 ? 'text-green-600' : 'text-orange-600'}`} />
-                <p className={`text-sm ${getSumaPesos() === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                  Suma total: {getSumaPesos()}% {getSumaPesos() !== 100 && '(debe sumar 100%)'}
-                </p>
+              <div className="flex items-center justify-between mt-3">
+                <button type="button" onClick={() => append({ nombre: '', descripcion: '', peso: 0 })}
+                  className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  <Plus className="w-4 h-4" /> Agregar categoría
+                </button>
+                <div className={`flex items-center gap-1.5 text-sm font-medium ${pesosOk ? 'text-green-600' : 'text-amber-600'}`}>
+                  {pesosOk
+                    ? <CheckCircle2 className="w-4 h-4" />
+                    : <AlertCircle className="w-4 h-4" />}
+                  Total: {sumaPesos}% {!pesosOk && `(faltan ${(100 - sumaPesos).toFixed(0)}%)`}
+                </div>
               </div>
-            </div>
+            </Section>
 
             {/* Requisitos */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                Requisitos
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Asistencia Mínima */}
+            <Section icon={Users} title="Requisitos">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Asistencia Mínima (%)
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Asistencia mínima
                   </label>
-                  <input
-                    type="number"
-                    {...register('requisitos.asistenciaMinima', { min: 0, max: 100 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <input type="number"
+                      {...register('requisitos.asistenciaMinima', { min: 0, max: 100 })}
+                      className="input-field w-full pr-8" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+                  </div>
                 </div>
-
-                {/* Días Mínimos con Cinturón */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Días Mínimos con Cinturón Actual
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Días mínimos con cinturón
                   </label>
-                  <input
-                    type="number"
-                    {...register('requisitos.diasMinimosCinturon', { min: 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <input type="number"
+                      {...register('requisitos.diasMinimosCinturon', { min: 0 })}
+                      className="input-field w-full pr-10" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">días</span>
+                  </div>
                 </div>
-
-                {/* Costo del Examen */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <DollarSign className="w-4 h-4 inline mr-1" />
-                    Costo del Examen
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <DollarSign className="w-3.5 h-3.5 inline mr-1 text-gray-400" />
+                    Costo del examen
                   </label>
-                  <input
-                    type="number"
-                    {...register('requisitos.costoExamen', { min: 0 })}
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Pagos al Corriente */}
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      {...register('requisitos.pagosAlCorriente')}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      Requiere pagos al corriente
-                    </span>
-                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                    <input type="number" step="0.01"
+                      {...register('requisitos.costoExamen', { min: 0 })}
+                      className="input-field w-full pl-7" />
+                  </div>
                 </div>
               </div>
-            </div>
+              <label className="mt-3 flex items-center gap-2.5 cursor-pointer w-fit">
+                <input type="checkbox"
+                  {...register('requisitos.pagosAlCorriente')}
+                  className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500" />
+                <span className="text-sm text-gray-700">Requiere pagos al corriente</span>
+              </label>
+            </Section>
 
             {/* Notas */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notas Adicionales
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Notas adicionales
               </label>
               <textarea
                 {...register('notas')}
-                rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={2}
+                className="input-field w-full resize-none"
                 placeholder="Notas o comentarios sobre el examen..."
               />
             </div>
           </div>
 
-          {/* Botones */}
-          <div className="flex gap-3 justify-end mt-6 pt-6 border-t">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={isLoading}
-            >
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+            <button type="button" onClick={handleClose} disabled={isLoading}
+              className="btn-secondary px-5">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
+            <button type="submit" disabled={isLoading}
+              className="btn-primary px-5 flex items-center gap-2">
               {isLoading ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Guardando...
-                </>
+                <><Loader className="w-4 h-4 animate-spin" />Guardando...</>
               ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  {mode === 'edit' ? 'Actualizar' : 'Crear'} Examen
-                </>
+                <><Save className="w-4 h-4" />{mode === 'edit' ? 'Actualizar' : 'Crear'} Examen</>
               )}
             </button>
           </div>

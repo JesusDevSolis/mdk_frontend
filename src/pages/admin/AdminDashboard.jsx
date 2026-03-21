@@ -29,6 +29,7 @@ import PagosPage from './PagosPage'
 import AsistenciasPage from './AsistenciasPage'
 import InstructoresPage from './InstructoresPage'
 import ExamenesPage from './ExamenesPage'
+import CalificacionesPage from './CalificacionesPage'
 import ConfiguracionPage from './ConfiguracionPage'
 import TutoresPage from './TutoresPage'
 import NotificacionesPage from './NotificacionesPage'
@@ -226,7 +227,7 @@ const AdminDashboard = () => {
               <Route path="sucursales" element={<SucursalesPage />} />
               <Route path="horarios" element={<HorariosPage />} />
               <Route path="pagos" element={<PagosPage />} />
-              <Route path="calificaciones" element={<ExamenesPage />} />
+              <Route path="calificaciones" element={<CalificacionesPage />} />
               <Route path="asistencias" element={<AsistenciasPage />} />
               <Route path="instructores" element={<InstructoresPage />} />
               <Route path="notificaciones" element={<NotificacionesPage />} />

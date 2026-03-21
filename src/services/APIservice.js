@@ -950,6 +950,12 @@ export const examenesAPI = {
   getEstadisticas: async (params = {}) => {
     const response = await api.get('/examenes/estadisticas', { params })
     return response.data
+  },
+
+  // Sincronizar pagos pendientes de alumnos inscritos en el examen
+  sincronizarPagos: async (examenId) => {
+    const response = await api.post(`/examenes/${examenId}/sincronizar-pagos`)
+    return response.data
   }
 }
 
@@ -983,6 +989,14 @@ export const graduacionesAPI = {
   getEstadisticas: async (params = {}) => {
     const response = await api.get('/graduaciones/estadisticas', { params })
     return response.data
+  },
+
+  // Descargar certificado PDF de una graduación
+  getCertificado: async (graduacionId) => {
+    const response = await api.get(`/graduaciones/${graduacionId}/certificado`, {
+      responseType: 'blob'
+    })
+    return response
   }
 }
 
