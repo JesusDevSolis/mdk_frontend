@@ -1278,11 +1278,10 @@ export const checkBackendConnection = async () => {
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '')
 
 export const disciplinasAPI = {
-  // Obtener todas las disciplinas activas
-  getAll: async () => {
-    const response = await api.get('/disciplinas')
+  // Obtener todas las disciplinas activas (o todas con all=true)
+  getAll: async (all = false) => {
+    const response = await api.get('/disciplinas', { params: all ? { all: 'true' } : {} })
     if (response.data?.success && Array.isArray(response.data.data)) {
-      // Reconstruir logoUrl con la URL real del backend (evita BACKEND_URL indefinida en Railway)
       response.data.data = response.data.data.map(d => ({
         ...d,
         logoUrl: d.logo?.url
@@ -1290,6 +1289,21 @@ export const disciplinasAPI = {
           : null
       }))
     }
+    return response.data
+  },
+
+  create: async (data) => {
+    const response = await api.post('/disciplinas', data)
+    return response.data
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/disciplinas/${id}`, data)
+    return response.data
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/disciplinas/${id}`)
     return response.data
   },
 

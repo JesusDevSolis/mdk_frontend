@@ -38,7 +38,8 @@ registerLocale('es', es)
 setDefaultLocale('es')
 
 // ── Constantes de disciplinas (v1.5) ──────────────────────────────────────────
-const PROGRAMA_OPTIONS = [
+// PROGRAMA_OPTIONS se carga desde useDisciplinas dinámicamente
+const PROGRAMA_OPTIONS_FALLBACK = [
   { value: 'tae-kwon-do',       label: 'Tae Kwon Do',       emoji: '🥋' },
   { value: 'tang-soo-do',       label: 'Tang Soo Do',        emoji: '🥊' },
   { value: 'hapkido',           label: 'Hapkido',            emoji: '🤸' },
@@ -63,7 +64,12 @@ const AlumnoForm = ({
   mode = 'create' // 'create' or 'edit'
 }) => {
   const { user } = useAuth()
-  const { getDisciplina } = useDisciplinas()
+  const { disciplinas, getDisciplina } = useDisciplinas()
+  const programaOptions = disciplinas.length > 0
+    ? disciplinas.filter(d => d.isActive).sort((a, b) => (a.orden||99)-(b.orden||99)).map(d => ({
+        value: d.slug, label: d.nombre, emoji: d.emoji || '🥋', logoUrl: d.logoUrl
+      }))
+    : PROGRAMA_OPTIONS_FALLBACK
   const [isLoading, setIsLoading] = useState(false)
   const [tutores, setTutores] = useState([])
   const [sucursales, setSucursales] = useState([])
@@ -745,7 +751,7 @@ const AlumnoForm = ({
                 </h3>
                 <p className="text-xs text-gray-500 mb-4">Puedes seleccionar una o varias disciplinas</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                  {PROGRAMA_OPTIONS.map(prog => {
+                  {programaOptions.map(prog => {
                     const selected = Array.isArray(watchPrograma)
                       ? watchPrograma.includes(prog.value)
                       : watchPrograma === prog.value

@@ -21,7 +21,7 @@ import {
   Trash2,
   Dumbbell
 } from 'lucide-react'
-import { alumnosAPI, sucursalesAPI, utils } from '../../services/APIservice'
+import { alumnosAPI, sucursalesAPI, disciplinasAPI, utils } from '../../services/APIservice'
 import { useAuth } from '../../context/Authcontext'
 
 // Importar sistema de permisos
@@ -36,14 +36,7 @@ import useDisciplinas from '../../hooks/useDisciplinas'
 import toast from 'react-hot-toast'
 
 // ── Opciones de disciplina/programa ──────────────────────────────────────────
-const PROGRAMA_OPTIONS = [
-  { value: '',                 label: 'Todos',            emoji: '🥋', color: 'gray'   },
-  { value: 'tae-kwon-do',     label: 'Tae Kwon Do',      emoji: '🦶', color: 'blue'   },
-  { value: 'tang-soo-do',     label: 'Tang Soo Do',      emoji: '✋', color: 'red'    },
-  { value: 'hapkido',         label: 'Hapkido',          emoji: '🌀', color: 'purple' },
-  { value: 'gumdo',           label: 'Gumdo',            emoji: '⚔️', color: 'yellow' },
-  { value: 'pequenos-dragones', label: 'Pequeños Dragones', emoji: '🐉', color: 'green'  },
-]
+const TODOS_OPTION = { value: '', label: 'Todos', emoji: '🥋', color: 'gray' }
 
 // Colores por disciplina para pills y badges
 const PROGRAMA_COLORS = {
@@ -60,6 +53,7 @@ const AlumnosPage = () => {
   
   const { user } = useAuth()
   const { getDisciplina } = useDisciplinas()
+  const [programaOptions, setProgramaOptions] = useState([TODOS_OPTION])
   const [alumnos, setAlumnos] = useState([])
   const [sucursales, setSucursales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -108,7 +102,32 @@ const AlumnosPage = () => {
   // Cargar datos iniciales (sin duplicar llamadas)
   useEffect(() => {
     loadInitialData()
+    loadProgramas()
   }, [])
+
+  const loadProgramas = async () => {
+    try {
+      const res = await disciplinasAPI.getAll()
+      if (res.success && Array.isArray(res.data)) {
+        const opts = [
+          TODOS_OPTION,
+          ...res.data
+            .filter(d => d.isActive)
+            .sort((a, b) => (a.orden || 99) - (b.orden || 99))
+            .map(d => ({
+              value: d.slug,
+              label: d.nombre,
+              emoji: d.emoji || '🥋',
+              color: 'blue',
+              logoUrl: d.logoUrl || null
+            }))
+        ]
+        setProgramaOptions(opts)
+      }
+    } catch (e) {
+      console.error('Error cargando programas:', e)
+    }
+  }
 
   // Filtros con debounce (evita múltiples llamadas)
   useEffect(() => {
@@ -591,9 +610,9 @@ const AlumnosPage = () => {
             <span>Disciplina:</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {PROGRAMA_OPTIONS.map((prog) => {
+            {programaOptions.map((prog) => {
               const isActive = filters.programa === prog.value
-              const colors = prog.value ? PROGRAMA_COLORS[prog.value] : null
+              const colors = prog.value ? (PROGRAMA_COLORS[prog.value] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300', activeBg: 'bg-gray-600' }) : null
               const disc = prog.value ? getDisciplina(prog.value) : null
 
               return (
